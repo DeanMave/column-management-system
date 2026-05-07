@@ -21,4 +21,12 @@ public class Column {
     private String ownerOrganization;
     private LocalDate returnDate;
     private ColumnStatus status;
+
+    public boolean isExternal(){
+        return ownerOrganization != null;
+    }
+
+    public boolean isAvailable(){
+        return status == ColumnStatus.AVAILABLE;
+    }
 }
