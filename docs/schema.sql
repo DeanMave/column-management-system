@@ -7,7 +7,7 @@ part_number VARCHAR(100) NOT NULL,
 length INTEGER NOT NULL, -- мм
 diameter INTEGER NOT NULL, -- мм
 particle_size NUMERIC(4,2) NOT NULL, -- мкм
-installation_date DATE,
+installation_date DATE NOT NULL,
 ph_min INTEGER NOT NULL,
 ph_max INTEGER NOT NULL,
 stationary_phase VARCHAR(100) NOT NULL,
