@@ -46,6 +46,8 @@ public class HplcColumn {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ColumnStatus status;
+    @Column(name = "internal_code",nullable = false,unique = true)
+    private String internalCode;
 
     public boolean isExternal(){
         return ownerOrganization != null;

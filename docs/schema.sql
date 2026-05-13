@@ -14,7 +14,8 @@ stationary_phase VARCHAR(100) NOT NULL,
 max_pressure INTEGER NOT NULL, -- bar
 owner_organization VARCHAR(100) NULL, -- NULL = наша колонка
 return_date DATE NULL, -- NULL = ещё не вернули
-status VARCHAR(20) NOT NULL -- AVAILABLE, IN_USE, RETURNED
+status VARCHAR(20) NOT NULL, -- AVAILABLE, IN_USE, RETURNED
+internal_code VARCHAR(100) NOT NULL UNIQUE -- ID для внутренней работы сотрудников
 );
 
 -- Таблица пользователей
