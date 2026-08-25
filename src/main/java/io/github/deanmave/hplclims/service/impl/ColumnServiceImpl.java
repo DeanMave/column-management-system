@@ -41,8 +41,8 @@ public class ColumnServiceImpl implements ColumnService {
     @Override
     public HplcColumn getById(Long id) {
         log.info("Запрос поиска колонки по ID: {}", id);
-        return (repository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Колонка с ID " + id + " не найдена")));
+        return repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Колонка с ID " + id + " не найдена"));
     }
 
     @Override
@@ -64,7 +64,7 @@ public class ColumnServiceImpl implements ColumnService {
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
         existingColumn.setStatus(newStatus);
         HplcColumn updatedColumn = repository.save(existingColumn);
-        log.info("Колонка обновлена: {}", existingColumn);
+        log.info("Колонка обновлена: {}", updatedColumn);
         return updatedColumn;
     }
 
@@ -75,7 +75,7 @@ public class ColumnServiceImpl implements ColumnService {
         HplcColumn existingColumn = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
         HplcColumn updatedColumn = repository.save(setData(existingColumn,newColumn));
-        log.info("Колонка обновлена: {}", newColumn);
+        log.info("Колонка обновлена: {}", updatedColumn);
         return updatedColumn;
     }
 

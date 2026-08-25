@@ -25,7 +25,8 @@ first_name VARCHAR(100) NOT NULL,
 last_name VARCHAR(100) NOT NULL,
 login VARCHAR(50) NOT NULL,
 password VARCHAR(100) NOT NULL,
-role VARCHAR(20) NOT NULL
+role VARCHAR(20) NOT NULL,
+is_active BOOLEAN NOT NULL DEFAULT TRUE -- Статус пользователя: АКТИВЕН, НЕАКТИВЕН
 );
 
 -- Таблица использования колонки
