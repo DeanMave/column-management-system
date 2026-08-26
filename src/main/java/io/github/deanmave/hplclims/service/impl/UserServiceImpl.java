@@ -39,6 +39,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<User> getByActive(boolean status) {
+        log.info("Запрос на получение пользователей по статусу активности");
+        return repository.findByIsActive(status);
+    }
+
+    @Override
     public User getById(Long id) {
         log.info("Запрос поиска пользователя по ID: {}", id);
         return repository.findById(id)

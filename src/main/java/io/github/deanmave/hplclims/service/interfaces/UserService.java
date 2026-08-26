@@ -10,6 +10,8 @@ public interface UserService {
 
     List<User> getAll();
 
+    List<User> getByActive(boolean status);
+
     User getById(Long id);
 
     User changeStatus(Long id, boolean newStatus);
