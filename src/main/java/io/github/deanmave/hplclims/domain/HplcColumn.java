@@ -26,15 +26,15 @@ public class HplcColumn {
     @Column(nullable = false)
     private Integer length;
     @Column(nullable = false)
-    private Integer diameter;
+    private BigDecimal diameter;
     @Column(name = "particle_size",nullable = false)
     private BigDecimal particleSize;
     @Column(name = "installation_date",nullable = false)
     private LocalDate installationDate;
     @Column(name = "ph_min",nullable = false)
-    private Integer phMin;
+    private Double phMin;
     @Column(name = "ph_max",nullable = false)
-    private Integer phMax;
+    private Double phMax;
     @Column(name = "stationary_phase",nullable = false)
     private String stationaryPhase;
     @Column(name = "max_pressure",nullable = false)
@@ -45,7 +45,7 @@ public class HplcColumn {
     private LocalDate returnDate;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ColumnStatus status;
+    private ColumnStatus status = ColumnStatus.AVAILABLE;
     @Column(name = "internal_code",nullable = false,unique = true)
     private String internalCode;
 

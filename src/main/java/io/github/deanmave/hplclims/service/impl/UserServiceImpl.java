@@ -25,10 +25,10 @@ public class UserServiceImpl implements UserService {
     public User create(User user) {
         log.info("Попытка добавления нового пользователя: {}", user);
         if (repository.existsByLogin(user.getLogin())) {
-            throw new ConflictException("Пользователь с ID " + user.getId() + " уже существует.");
+            throw new ConflictException("Пользователь с логином " + user.getLogin() + " уже существует.");
         }
         User newUser = repository.save(user);
-        log.info("Пользователь добавлен: " + newUser);
+        log.info("Пользователь добавлен: {}", newUser);
         return newUser;
     }
 

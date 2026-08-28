@@ -25,8 +25,9 @@ public class ColumnServiceImpl implements ColumnService {
     public HplcColumn create(HplcColumn hplcColumn) {
         log.info("Попытка добавления новой колонки: {}", hplcColumn);
         if (repository.existsByInternalCode(hplcColumn.getInternalCode())) {
-            throw new ConflictException("Колонка с ID " + hplcColumn.getId() + " уже существует.");
+            throw new ConflictException("Колонка с internalCode " + hplcColumn.getInternalCode() + " уже существует.");
         }
+        hplcColumn.setStatus(ColumnStatus.AVAILABLE);
         HplcColumn savedColumn = repository.save(hplcColumn);
         log.info("Колонка добавлена: {}", savedColumn);
         return savedColumn;

@@ -5,11 +5,11 @@ manufacturer VARCHAR(100) NOT NULL,
 serial_number VARCHAR(100) NOT NULL,
 part_number VARCHAR(100) NOT NULL,
 length INTEGER NOT NULL, -- мм
-diameter INTEGER NOT NULL, -- мм
+diameter NUMERIC(4,2) NOT NULL, -- мм
 particle_size NUMERIC(4,2) NOT NULL, -- мкм
 installation_date DATE NOT NULL,
-ph_min INTEGER NOT NULL,
-ph_max INTEGER NOT NULL,
+ph_min DOUBLE PRECISION NOT NULL,
+ph_max DOUBLE PRECISION NOT NULL,
 stationary_phase VARCHAR(100) NOT NULL,
 max_pressure INTEGER NOT NULL, -- bar
 owner_organization VARCHAR(100) NULL, -- NULL = наша колонка
