@@ -81,6 +81,10 @@ public class ColumnServiceImpl implements ColumnService {
     }
 
     private HplcColumn setData(HplcColumn existingColumn, HplcColumn newColumn){
+        if (!existingColumn.getInternalCode().equals(newColumn.getInternalCode())
+            && repository.existsByInternalCode(newColumn.getInternalCode())) {
+            throw new ConflictException("internalCode уже занят: " + newColumn.getInternalCode());
+        }
         existingColumn.setManufacturer(newColumn.getManufacturer());
         existingColumn.setSerialNumber(newColumn.getSerialNumber());
         existingColumn.setPartNumber(newColumn.getPartNumber());
@@ -93,10 +97,7 @@ public class ColumnServiceImpl implements ColumnService {
         existingColumn.setMaxPressure(newColumn.getMaxPressure());
         existingColumn.setOwnerOrganization(newColumn.getOwnerOrganization());
         existingColumn.setReturnDate(newColumn.getReturnDate());
-        if (!existingColumn.getInternalCode().equals(newColumn.getInternalCode())
-            && repository.existsByInternalCode(newColumn.getInternalCode())) {
-            throw new ConflictException("internalCode уже занят: " + newColumn.getInternalCode());
-        }
+        existingColumn.setStationaryPhase(newColumn.getStationaryPhase());
         existingColumn.setInternalCode(newColumn.getInternalCode());
         return existingColumn;
     }
