@@ -71,6 +71,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(()-> new NotFoundException("Пользователь с ID " + id + " не найден"));
         existingUser.setFirstName(newUser.getFirstName());
         existingUser.setLastName(newUser.getLastName());
+        existingUser.setMiddleName(newUser.getMiddleName());
         User updatedUser = repository.save(existingUser);
         log.info("Профиль пользователя обновлена: {}", updatedUser);
         return updatedUser;
