@@ -95,6 +95,10 @@ public class UserServiceImpl implements UserService {
         log.info("Попытка смены логина у пользователя с ID: {}", id);
         User existingUser = repository.findById(id)
                 .orElseThrow(()-> new NotFoundException("Пользователь с ID " + id + " не найден"));
+        if (!existingUser.getLogin().equals(newLogin)
+            && repository.existsByLogin(newLogin)) {
+            throw new ConflictException("login уже занят: " + newLogin);
+        }
         existingUser.setLogin(newLogin);
         User updatedUser = repository.save(existingUser);
         log.info("Логин пользователя обновлен: {}", updatedUser);
