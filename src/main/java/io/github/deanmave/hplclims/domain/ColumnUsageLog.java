@@ -24,12 +24,20 @@ public class ColumnUsageLog {
     private HplcColumn hplcColumn;
     @Column(name = "task_number",nullable = false)
     private String taskNumber;
+    @Column(name = "drug_name",nullable = false)
+    private String drugName;
+    @Column(name = "analysis_parameters")
+    private String analysisParameters;
+    @Column(name = "storage_phase")
+    private String storagePhase;
+    @Column(name = "min_pressure")
+    private Integer minPressure;
+    @Column(name = "max_pressure")
+    private Integer maxPressure;
     @Column(name = "start_date",nullable = false)
     private LocalDate startDate;
-    @Column(name = "end_date",nullable = false)
+    @Column(name = "end_date")
     private LocalDate endDate;
-    @Column(name = "analysis_parameters",nullable = false)
-    private String analysisParameters;
-    @Column(name = "storage_phase",nullable = false)
-    private String storagePhase;
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
 }

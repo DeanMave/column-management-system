@@ -36,10 +36,14 @@ id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 user_id BIGINT NOT NULL, -- Пользователь
 column_id BIGINT NOT NULL, -- Колонка
 task_number VARCHAR(100) NOT NULL, -- Номер задания
+drug_name VARCHAR(255) NOT NULL, -- Наименование препарата
+analysis_parameters TEXT NULL, -- Описание ключевых данных анализа
+storage_phase TEXT NULL, -- Хранение
+min_pressure INTEGER NULL, -- Минимальное давление при анализе
+max_pressure INTEGER NULL, -- Максимальное давление при анализе
 start_date DATE NOT NULL,
-end_date DATE NOT NULL,
-analysis_parameters TEXT NOT NULL, -- Описание ключевых данных анализа
-storage_phase TEXT NOT NULL, -- Хранение
+end_date DATE NULL,
+rejection_reason TEXT NULL, -- NULL = анализ завершен штатно
 CONSTRAINT fk_log_user FOREIGN KEY (user_id) REFERENCES users(id),
 CONSTRAINT fk_log_column FOREIGN KEY (column_id) REFERENCES hplc_column(id)
 );
