@@ -94,7 +94,7 @@ public class UsageLogServiceImpl implements UsageLogService {
         if (existLog.getEndDate() != null) {
             throw new ConflictException("Анализ по логу с id: " + logId + " уже завершён");
         }
-        if(!StringUtils.hasText(reason) || rejectionDate == null){
+        if (!StringUtils.hasText(reason) || rejectionDate == null) {
             throw new ValidationException("Причина отказа и дата должны быть указаны");
         }
         if (rejectionDate.isBefore(existLog.getStartDate()) || rejectionDate.isAfter(LocalDate.now())) {
@@ -102,24 +102,29 @@ public class UsageLogServiceImpl implements UsageLogService {
         }
         existLog.setEndDate(rejectionDate);
         existLog.setRejectionReason(reason);
-        columnService.changeStatus(existLog.getHplcColumn().getId(),ColumnStatus.AVAILABLE);
+        columnService.changeStatus(existLog.getHplcColumn().getId(), ColumnStatus.AVAILABLE);
         ColumnUsageLog savedLog = repository.save(existLog);
-        log.info("Отказ от колонки завершен, лог успешно закрыт:{}",savedLog.getId());
+        log.info("Отказ от колонки завершен, лог успешно закрыт:{}", savedLog.getId());
         return savedLog;
     }
 
     @Override
     public List<ColumnUsageLog> getLogsByColumn(Long hplcColumnId) {
-        return List.of();
+        log.info("Запрос на получение логов для колонки с id:{}", hplcColumnId);
+        columnService.getById(hplcColumnId);
+        return repository.findByHplcColumn_Id(hplcColumnId);
     }
 
     @Override
     public List<ColumnUsageLog> getLogsByUser(Long userId) {
-        return List.of();
+        log.info("Запрос на получение логов для пользователя с id:{}", userId);
+        userService.getById(userId);
+        return repository.findByUser_Id(userId);
     }
 
     @Override
     public List<ColumnUsageLog> getActiveUsages() {
-        return List.of();
+        log.info("Запрос на получение незавершенных логов");
+        return repository.findByEndDateIsNull();
     }
 }
