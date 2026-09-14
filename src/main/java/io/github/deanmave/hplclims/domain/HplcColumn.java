@@ -31,13 +31,13 @@ public class HplcColumn {
     private BigDecimal particleSize;
     @Column(name = "installation_date",nullable = false)
     private LocalDate installationDate;
-    @Column(name = "ph_min",nullable = false)
+    @Column(name = "ph_min")
     private Double phMin;
-    @Column(name = "ph_max",nullable = false)
+    @Column(name = "ph_max")
     private Double phMax;
-    @Column(name = "stationary_phase",nullable = false)
+    @Column(name = "stationary_phase")
     private String stationaryPhase;
-    @Column(name = "max_pressure",nullable = false)
+    @Column(name = "max_pressure")
     private Integer maxPressure;
     @Column(name = "owner_organization")
     private String ownerOrganization;
@@ -48,6 +48,8 @@ public class HplcColumn {
     private ColumnStatus status = ColumnStatus.AVAILABLE;
     @Column(name = "internal_code",nullable = false,unique = true)
     private String internalCode;
+    @Column(name = "storage_location")
+    private String storageLocation;
 
     public boolean isExternal(){
         return ownerOrganization != null;
