@@ -4,6 +4,7 @@ import io.github.deanmave.hplclims.domain.ColumnStatus;
 import io.github.deanmave.hplclims.domain.HplcColumn;
 import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
+import io.github.deanmave.hplclims.exception.ValidationException;
 import io.github.deanmave.hplclims.repository.ColumnRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
 
 @Service
 @Slf4j
@@ -23,7 +25,7 @@ public class ColumnServiceImpl implements ColumnService {
     @Override
     @Transactional
     public HplcColumn create(HplcColumn hplcColumn) {
-        log.info("Попытка добавления новой колонки: {}", hplcColumn);
+        log.info("Попытка добавления новой колонки Администратором: {}", hplcColumn);
         if (repository.existsByInternalCode(hplcColumn.getInternalCode())) {
             throw new ConflictException("Колонка с internalCode " + hplcColumn.getInternalCode() + " уже существует.");
         }
@@ -31,6 +33,35 @@ public class ColumnServiceImpl implements ColumnService {
         HplcColumn savedColumn = repository.save(hplcColumn);
         log.info("Колонка добавлена: {}", savedColumn);
         return savedColumn;
+    }
+
+    @Override
+    @Transactional
+    public HplcColumn createDraft(HplcColumn draftColumn) {
+        log.info("Попытка добавления новой колонки сотрудником Орг. Отдела: {}", draftColumn);
+        if (repository.existsByInternalCode(draftColumn.getInternalCode())) {
+            throw new ConflictException("Колонка с internalCode " + draftColumn.getInternalCode() + " уже существует.");
+        }
+        draftColumn.setStatus(ColumnStatus.DRAFT);
+        HplcColumn savedColumn = repository.save(draftColumn);
+        log.info("Колонка добавлена: {}", savedColumn);
+        return savedColumn;
+    }
+
+    @Override
+    @Transactional
+    public HplcColumn activateColumn(Long id, HplcColumn completedData) {
+        log.info("Попытка добавления данных  Администратором для колонки с ID : {}", id);
+        HplcColumn existingColumn = repository.findById(id).orElseThrow(
+                () -> new NotFoundException("Колонка с ID " + id + " не найдена"));
+        if (existingColumn.getStatus() != ColumnStatus.DRAFT){
+            throw new ValidationException("Только колонки со статусом DRAFT можно перевести в статус AVAILABLE");
+        }
+        setData(existingColumn, completedData);
+        existingColumn.setStatus(ColumnStatus.AVAILABLE);
+        HplcColumn activatedColumn = repository.save(existingColumn);
+        log.info("Колонка c ID {} перешла в статус AVAILABLE", activatedColumn.getId());
+        return activatedColumn;
     }
 
     @Override
@@ -75,12 +106,12 @@ public class ColumnServiceImpl implements ColumnService {
         log.info("Попытка обновления колонки с ID: {}", id);
         HplcColumn existingColumn = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
-        HplcColumn updatedColumn = repository.save(setData(existingColumn,newColumn));
+        HplcColumn updatedColumn = repository.save(setData(existingColumn, newColumn));
         log.info("Колонка обновлена: {}", updatedColumn);
         return updatedColumn;
     }
 
-    private HplcColumn setData(HplcColumn existingColumn, HplcColumn newColumn){
+    private HplcColumn setData(HplcColumn existingColumn, HplcColumn newColumn) {
         if (!existingColumn.getInternalCode().equals(newColumn.getInternalCode())
             && repository.existsByInternalCode(newColumn.getInternalCode())) {
             throw new ConflictException("internalCode уже занят: " + newColumn.getInternalCode());
