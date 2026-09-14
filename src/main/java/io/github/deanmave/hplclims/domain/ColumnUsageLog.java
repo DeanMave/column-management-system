@@ -17,9 +17,11 @@ public class ColumnUsageLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToOne
+    @ToString.Exclude
     @JoinColumn(name = "user_id",nullable = false)
     private User user;
     @ManyToOne
+    @ToString.Exclude
     @JoinColumn(name = "column_id",nullable = false)
     private HplcColumn hplcColumn;
     @Column(name = "task_number",nullable = false)
