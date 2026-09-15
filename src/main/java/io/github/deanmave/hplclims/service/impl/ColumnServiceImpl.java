@@ -35,6 +35,7 @@ public class ColumnServiceImpl implements ColumnService {
         return savedColumn;
     }
 
+    // TO DO: Убрать методы CreateDraft и activateColumn, заполнять колонки может только Администратор
     @Override
     @Transactional
     public HplcColumn createDraft(HplcColumn draftColumn) {
