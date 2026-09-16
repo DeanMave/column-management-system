@@ -4,6 +4,7 @@ import io.github.deanmave.hplclims.domain.ColumnStatus;
 import io.github.deanmave.hplclims.domain.ColumnUsageLog;
 import io.github.deanmave.hplclims.domain.HplcColumn;
 import io.github.deanmave.hplclims.domain.User;
+import io.github.deanmave.hplclims.domain.dto.request.CorrectUsageLogRequest;
 import io.github.deanmave.hplclims.domain.dto.request.EndUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.request.StartUsageRequest;
 import io.github.deanmave.hplclims.exception.ConflictException;
@@ -292,6 +293,73 @@ class UsageLogServiceImplTest {
             assertThat(existingLog.getRejectionReason()).isEqualTo("Причина отказа");
 
             verify(columnService).changeStatus(testColumn.getId(), ColumnStatus.AVAILABLE);
+        }
+    }
+
+
+    @Nested
+    class CorrectLog {
+        private ColumnUsageLog existingLog;
+        private CorrectUsageLogRequest request;
+
+        @BeforeEach
+        void setRejectUsage() {
+            existingLog = new ColumnUsageLog();
+            existingLog.setId(10L);
+            existingLog.setUser(testUser);
+            existingLog.setHplcColumn(testColumn);
+            existingLog.setStartDate(LocalDate.now().minusDays(3));
+
+            request = new CorrectUsageLogRequest();
+            request.setTaskNumber("2780ДК");
+            request.setDrugName("Валидол");
+            request.setAnalysisParameters("Канал А - 90% H2O; C - 10% ACN");
+            request.setStoragePhase("80% ACN : 20% H2O");
+            request.setMinPressure(45);
+            request.setMaxPressure(140);
+            request.setEndDate(LocalDate.now());
+        }
+
+        @Test
+        void whenLogNotFound_ShouldThrowNotFoundException() {
+            when(repository.findById(10L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.correctLog(10L, request))
+                    .isInstanceOf(NotFoundException.class);
+
+            verify(columnService, never()).changeStatus(anyLong(), any());
+            verify(repository, never()).save(any());
+        }
+
+        @Test
+        void whenEndDateIsInvalid_ShouldThrowValidationException() {
+            request.setEndDate(LocalDate.now().minusDays(4));
+            existingLog.setEndDate(LocalDate.now().minusDays(1));
+            when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
+
+            assertThatThrownBy(() -> service.correctLog(10L, request))
+                    .isInstanceOf(ValidationException.class);
+
+            verify(repository, never()).save(any());
+        }
+
+        @Test
+        void whenDataIsValidAndLogWasActive_ShouldCorrectAndChangeColumnStatus() {
+            when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
+
+            when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+            ColumnUsageLog result = service.correctLog(10L, request);
+            assertThat(existingLog.getTaskNumber()).isEqualTo("2780ДК");
+            assertThat(existingLog.getDrugName()).isEqualTo("Валидол");
+            assertThat(existingLog.getAnalysisParameters()).isEqualTo("Канал А - 90% H2O; C - 10% ACN");
+            assertThat(existingLog.getStoragePhase()).isEqualTo("80% ACN : 20% H2O");
+            assertThat(existingLog.getMinPressure()).isEqualTo(45);
+            assertThat(existingLog.getMaxPressure()).isEqualTo(140);
+            assertThat(existingLog.getEndDate()).isEqualTo(LocalDate.now());
+
+            verify(columnService).changeStatus(testColumn.getId(), ColumnStatus.AVAILABLE);
+            verify(repository).save(any());
         }
     }
 
