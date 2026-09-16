@@ -109,6 +109,31 @@ public class UsageLogServiceImpl implements UsageLogService {
     }
 
     @Override
+    @Transactional
+    public ColumnUsageLog correctLog(Long logId, CorrectUsageLogRequest request) {
+        log.info("Попытка изменения существуещго лога с ID: {}", logId);
+        ColumnUsageLog existLog = repository.findById(logId)
+                .orElseThrow(() -> new NotFoundException("Лога с id: " + logId + " не найдено"));
+    
+        if (!StringUtils.hasText(request.getAnalysisParameters()) || !StringUtils.hasText(request.getStoragePhase())
+            || request.getMinPressure() == null || request.getMaxPressure() == null || request.getEndDate() == null) {
+            throw new ValidationException("Поля связанные с завершением анализа должны быть заполнены");
+        }
+        if (request.getEndDate().isBefore(existLog.getStartDate()) || request.getEndDate().isAfter(LocalDate.now())) {
+            throw new ValidationException("Дата завершения анализа не может быть раньше начальной или позже сегодняшней даты");
+        }
+        existLog.setAnalysisParameters(request.getAnalysisParameters());
+        existLog.setStoragePhase(request.getStoragePhase());
+        existLog.setMinPressure(request.getMinPressure());
+        existLog.setMaxPressure(request.getMaxPressure());
+        existLog.setEndDate(request.getEndDate());
+        columnService.changeStatus(existLog.getHplcColumn().getId(), ColumnStatus.AVAILABLE);
+        ColumnUsageLog endLog = repository.save(existLog);
+        log.info("Лог успешно изменён:{}", endLog.getId());
+        return endLog;
+    }
+    
+    @Override
     public List<ColumnUsageLog> getLogsByColumn(Long hplcColumnId) {
         log.info("Запрос на получение логов для колонки с id:{}", hplcColumnId);
         columnService.getById(hplcColumnId);
