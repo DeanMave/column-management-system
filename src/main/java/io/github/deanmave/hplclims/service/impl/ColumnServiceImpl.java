@@ -101,6 +101,7 @@ public class ColumnServiceImpl implements ColumnService {
         existingColumn.setReturnDate(newColumn.getReturnDate());
         existingColumn.setStationaryPhase(newColumn.getStationaryPhase());
         existingColumn.setInternalCode(newColumn.getInternalCode());
+        existingColumn.setStorageLocation(newColumn.getStorageLocation());
         return existingColumn;
     }
 }
