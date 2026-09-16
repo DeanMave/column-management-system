@@ -8,11 +8,6 @@ import java.util.List;
 public interface ColumnService {
     HplcColumn create(HplcColumn hplcColumn);
 
-    //TO DO: Убрать методы createDraft и activateColumn
-    HplcColumn createDraft(HplcColumn draftColumn);
-
-    HplcColumn activateColumn(Long id, HplcColumn completedData);
-
     List<HplcColumn> getAll();
 
     HplcColumn getById(Long id);
