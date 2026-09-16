@@ -8,10 +8,10 @@ length INTEGER NOT NULL, -- мм
 diameter NUMERIC(4,2) NOT NULL, -- мм
 particle_size NUMERIC(4,2) NOT NULL, -- мкм
 installation_date DATE NOT NULL,
-ph_min DOUBLE PRECISION NULL,
-ph_max DOUBLE PRECISION NULL,
-stationary_phase VARCHAR(100) NULL,
-max_pressure INTEGER NULL, -- bar
+ph_min DOUBLE PRECISION NOT NULL,
+ph_max DOUBLE PRECISION NOT NULL,
+stationary_phase VARCHAR(100) NOT NULL,
+max_pressure INTEGER NOT NULL, -- bar
 owner_organization VARCHAR(100) NULL, -- NULL = наша колонка
 return_date DATE NULL, -- NULL = ещё не вернули
 status VARCHAR(20) NOT NULL, -- AVAILABLE, IN_USE, RETURNED
