@@ -31,13 +31,13 @@ public class HplcColumn {
     private BigDecimal particleSize;
     @Column(name = "installation_date",nullable = false)
     private LocalDate installationDate;
-    @Column(name = "ph_min")
+    @Column(name = "ph_min",nullable = false)
     private Double phMin;
-    @Column(name = "ph_max")
+    @Column(name = "ph_max",nullable = false)
     private Double phMax;
-    @Column(name = "stationary_phase")
+    @Column(name = "stationary_phase",nullable = false)
     private String stationaryPhase;
-    @Column(name = "max_pressure")
+    @Column(name = "max_pressure",nullable = false)
     private Integer maxPressure;
     @Column(name = "owner_organization")
     private String ownerOrganization;
