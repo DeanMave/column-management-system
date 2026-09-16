@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,4 +16,5 @@ public class CorrectUsageLogRequest {
     private String storagePhase;
     private Integer minPressure;
     private Integer maxPressure;
+    private LocalDate endDate;
 }

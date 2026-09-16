@@ -4,6 +4,7 @@ import io.github.deanmave.hplclims.domain.ColumnStatus;
 import io.github.deanmave.hplclims.domain.ColumnUsageLog;
 import io.github.deanmave.hplclims.domain.HplcColumn;
 import io.github.deanmave.hplclims.domain.User;
+import io.github.deanmave.hplclims.domain.dto.request.CorrectUsageLogRequest;
 import io.github.deanmave.hplclims.domain.dto.request.EndUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.request.StartUsageRequest;
 import io.github.deanmave.hplclims.exception.ConflictException;
@@ -111,28 +112,31 @@ public class UsageLogServiceImpl implements UsageLogService {
     @Override
     @Transactional
     public ColumnUsageLog correctLog(Long logId, CorrectUsageLogRequest request) {
-        log.info("Попытка изменения существуещго лога с ID: {}", logId);
+        log.info("Попытка изменения существующего лога с ID: {}", logId);
         ColumnUsageLog existLog = repository.findById(logId)
                 .orElseThrow(() -> new NotFoundException("Лога с id: " + logId + " не найдено"));
-    
-        if (!StringUtils.hasText(request.getAnalysisParameters()) || !StringUtils.hasText(request.getStoragePhase())
-            || request.getMinPressure() == null || request.getMaxPressure() == null || request.getEndDate() == null) {
-            throw new ValidationException("Поля связанные с завершением анализа должны быть заполнены");
+        if (StringUtils.hasText(request.getTaskNumber())) existLog.setTaskNumber(request.getTaskNumber());
+        if (StringUtils.hasText(request.getDrugName())) existLog.setDrugName(request.getDrugName());
+        if (StringUtils.hasText(request.getAnalysisParameters()))
+            existLog.setAnalysisParameters(request.getAnalysisParameters());
+        if (StringUtils.hasText(request.getStoragePhase())) existLog.setStoragePhase(request.getStoragePhase());
+        if (request.getMinPressure() != null) existLog.setMinPressure(request.getMinPressure());
+        if (request.getMaxPressure() != null) existLog.setMaxPressure(request.getMaxPressure());
+        if (request.getEndDate() != null) {
+            if (request.getEndDate().isBefore(existLog.getStartDate()) || request.getEndDate().isAfter(LocalDate.now())) {
+                throw new ValidationException("Дата завершения не может быть раньше начальной или позже сегодняшней даты");
+            }
+            boolean wasActive = (existLog.getEndDate() == null);
+            existLog.setEndDate(request.getEndDate());
+            if (wasActive) {
+                columnService.changeStatus(existLog.getHplcColumn().getId(), ColumnStatus.AVAILABLE);
+            }
         }
-        if (request.getEndDate().isBefore(existLog.getStartDate()) || request.getEndDate().isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата завершения анализа не может быть раньше начальной или позже сегодняшней даты");
-        }
-        existLog.setAnalysisParameters(request.getAnalysisParameters());
-        existLog.setStoragePhase(request.getStoragePhase());
-        existLog.setMinPressure(request.getMinPressure());
-        existLog.setMaxPressure(request.getMaxPressure());
-        existLog.setEndDate(request.getEndDate());
-        columnService.changeStatus(existLog.getHplcColumn().getId(), ColumnStatus.AVAILABLE);
         ColumnUsageLog endLog = repository.save(existLog);
         log.info("Лог успешно изменён:{}", endLog.getId());
         return endLog;
     }
-    
+
     @Override
     public List<ColumnUsageLog> getLogsByColumn(Long hplcColumnId) {
         log.info("Запрос на получение логов для колонки с id:{}", hplcColumnId);

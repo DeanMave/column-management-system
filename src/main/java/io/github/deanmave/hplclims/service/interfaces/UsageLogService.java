@@ -15,7 +15,7 @@ public interface UsageLogService {
 
     ColumnUsageLog rejectUsage(Long logId, String reason, LocalDate rejectionDate);
 
-    ColumnUsageLog correctLog(Long logId, CorrectUsageRequest request);
+    ColumnUsageLog correctLog(Long logId, CorrectUsageLogRequest request);
 
     List<ColumnUsageLog> getLogsByColumn(Long hplcColumnId);
 
