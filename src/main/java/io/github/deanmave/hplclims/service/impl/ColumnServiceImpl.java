@@ -35,36 +35,6 @@ public class ColumnServiceImpl implements ColumnService {
         return savedColumn;
     }
 
-    // TO DO: Убрать методы CreateDraft и activateColumn, заполнять колонки может только Администратор
-    @Override
-    @Transactional
-    public HplcColumn createDraft(HplcColumn draftColumn) {
-        log.info("Попытка добавления новой колонки сотрудником Орг. Отдела: {}", draftColumn);
-        if (repository.existsByInternalCode(draftColumn.getInternalCode())) {
-            throw new ConflictException("Колонка с internalCode " + draftColumn.getInternalCode() + " уже существует.");
-        }
-        draftColumn.setStatus(ColumnStatus.DRAFT);
-        HplcColumn savedColumn = repository.save(draftColumn);
-        log.info("Колонка добавлена: {}", savedColumn);
-        return savedColumn;
-    }
-
-    @Override
-    @Transactional
-    public HplcColumn activateColumn(Long id, HplcColumn completedData) {
-        log.info("Попытка добавления данных  Администратором для колонки с ID : {}", id);
-        HplcColumn existingColumn = repository.findById(id).orElseThrow(
-                () -> new NotFoundException("Колонка с ID " + id + " не найдена"));
-        if (existingColumn.getStatus() != ColumnStatus.DRAFT){
-            throw new ValidationException("Только колонки со статусом DRAFT можно перевести в статус AVAILABLE");
-        }
-        setData(existingColumn, completedData);
-        existingColumn.setStatus(ColumnStatus.AVAILABLE);
-        HplcColumn activatedColumn = repository.save(existingColumn);
-        log.info("Колонка c ID {} перешла в статус AVAILABLE", activatedColumn.getId());
-        return activatedColumn;
-    }
-
     @Override
     public List<HplcColumn> getAll() {
         log.info("Запрос на получение всех колонок");
