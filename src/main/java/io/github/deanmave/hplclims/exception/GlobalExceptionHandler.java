@@ -2,40 +2,41 @@ package io.github.deanmave.hplclims.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.Map;
 
 @Slf4j
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
-
     @ExceptionHandler(NotFoundException.class)
-    public String handleNotFound(NotFoundException e, Model model) {
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleNotFound(final NotFoundException e) {
         log.warn("Объект не найден: {}", e.getMessage());
-        model.addAttribute("message", e.getMessage());
-        return "error/not-found";  // templates/error/not-found.html
+        return Map.of("error", "Искомый объект не найден.", "message", e.getMessage());
     }
 
     @ExceptionHandler(ValidationException.class)
-    public String handleValidation(ValidationException e, Model model) {
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleValidation(final ValidationException e) {
         log.warn("Ошибка при валидации данных: {}", e.getMessage());
-        model.addAttribute("message", e.getMessage());
-        return "error/validation";  // templates/error/validation.html
+        return Map.of("error", "Ошибка при валидации данных.", "message", e.getMessage());
     }
 
     @ExceptionHandler(ConflictException.class)
-    public String handleConflict(ConflictException e, Model model) {
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleConflict(final ConflictException e) {
         log.warn("Ошибка: конфликт данных: {}", e.getMessage());
-        model.addAttribute("message", e.getMessage());
-        return "error/conflict";  // templates/error/conflict.html
+        return Map.of("error", "Конфликт данных.", "message", e.getMessage());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public String handleDataIntegrity(DataIntegrityViolationException e, Model model) {
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleDataIntegrity(final DataIntegrityViolationException e) {
         log.warn("Ошибка целостности данных: {}", e.getMessage());
-        model.addAttribute("message", "Нарушение целостности данных. Возможно, значение уже используется.");
-        return "error/conflict";
+        return Map.of("error", "Нарушение целостности данных. Возможно, значение уже используется.", "message", e.getMessage());
     }
-
 }
