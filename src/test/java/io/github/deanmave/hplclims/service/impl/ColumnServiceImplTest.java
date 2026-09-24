@@ -84,6 +84,51 @@ class ColumnServiceImplTest {
     }
 
     @Test
+    void create_whenInternalCodeIsEmpty_shouldGenerateIntCode() {
+        testColumn.setInternalCode(null);
+        testColumn.setOwnerOrganization(null);
+
+        int currentYear = LocalDate.now().getYear();
+        String expectedCode = String.format("INT-%d-001", currentYear);
+
+        when(repository.getNextIntSequenceValue()).thenReturn(1L);
+
+        HplcColumn savedColumnDb = new HplcColumn();
+        savedColumnDb.setId(1L);
+        savedColumnDb.setInternalCode(expectedCode);
+        when(repository.save(testColumn)).thenReturn(savedColumnDb);
+
+        HplcColumn result = service.create(testColumn);
+
+        assertThat(result.getInternalCode()).isEqualTo(expectedCode);
+        verify(repository).getNextIntSequenceValue();
+        verify(repository).existsByInternalCode(expectedCode);
+    }
+
+    @Test
+    void create_whenInternalCodeIsEmpty_shouldGenerateExtCode() {
+        testColumn.setInternalCode(null);
+
+        int currentYear = LocalDate.now().getYear();
+        String expectedCode = String.format("EXT-%d-001", currentYear);
+
+        when(repository.getNextExtSequenceValue()).thenReturn(1L);
+
+        HplcColumn savedColumnDb = new HplcColumn();
+        savedColumnDb.setId(1L);
+        savedColumnDb.setInternalCode(expectedCode);
+        savedColumnDb.setOwnerOrganization("Альтаир");
+        when(repository.save(testColumn)).thenReturn(savedColumnDb);
+
+        HplcColumn result = service.create(testColumn);
+
+        assertThat(result.getInternalCode()).isEqualTo(expectedCode);
+        assertThat(result.getOwnerOrganization()).isEqualTo("Альтаир");
+        verify(repository).getNextExtSequenceValue();
+        verify(repository).existsByInternalCode(expectedCode);
+    }
+
+    @Test
     void getAll_WhenColumnsExist_ShouldReturnListOfColumns() {
         when(repository.findAll()).thenReturn(List.of(testColumn));
 
@@ -182,10 +227,10 @@ class ColumnServiceImplTest {
     void correctData_WhenColumnDoesNotExist_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.correctData(1L,testColumn))
+        assertThatThrownBy(() -> service.correctData(1L, testColumn))
                 .isInstanceOf(NotFoundException.class);
 
-        verify(repository,never()).save(any(HplcColumn.class));
+        verify(repository, never()).save(any(HplcColumn.class));
     }
 
     @Test
@@ -200,7 +245,7 @@ class ColumnServiceImplTest {
         assertThatThrownBy(() -> service.correctData(1L, newData))
                 .isInstanceOf(ConflictException.class);
 
-        verify(repository,never()).save(any(HplcColumn.class));
+        verify(repository, never()).save(any(HplcColumn.class));
 
         assertThat(testColumn.getManufacturer()).isEqualTo("Waters");
     }
@@ -214,6 +259,6 @@ class ColumnServiceImplTest {
 
         service.correctData(1L, newData);
 
-        verify(repository,never()).existsByInternalCode(anyString());
+        verify(repository, never()).existsByInternalCode(anyString());
     }
 }
