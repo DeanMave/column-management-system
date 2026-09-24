@@ -1,3 +1,6 @@
+CREATE SEQUENCE column_int_code_seq START WITH 1 INCREMENT BY 1; -- Счётчик внутренних колонок организации
+CREATE SEQUENCE column_ext_code_seq START WITH 1 INCREMENT BY 1; -- Счётчик внешних колонок организации
+
 -- Таблица колонок
 CREATE TABLE hplc_column(
 id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

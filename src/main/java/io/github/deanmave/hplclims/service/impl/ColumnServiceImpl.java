@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -30,6 +31,11 @@ public class ColumnServiceImpl implements ColumnService {
             throw new ConflictException("Колонка с internalCode " + hplcColumn.getInternalCode() + " уже существует.");
         }
         hplcColumn.setStatus(ColumnStatus.AVAILABLE);
+        if(!StringUtils.hasText(hplcColumn.getInternalCode())){
+            if(hplcColumn.getOwnerOrganization()==null){
+
+            }
+        }
         HplcColumn savedColumn = repository.save(hplcColumn);
         log.info("Колонка добавлена: {}", savedColumn);
         return savedColumn;
