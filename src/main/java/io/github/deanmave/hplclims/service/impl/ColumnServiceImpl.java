@@ -4,7 +4,6 @@ import io.github.deanmave.hplclims.domain.ColumnStatus;
 import io.github.deanmave.hplclims.domain.HplcColumn;
 import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
-import io.github.deanmave.hplclims.exception.ValidationException;
 import io.github.deanmave.hplclims.repository.ColumnRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.util.List;
 
 
@@ -21,21 +21,23 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ColumnServiceImpl implements ColumnService {
+    private static final String INT_PREFIX = "INT";
+    private static final String EXT_PREFIX = "EXT";
+
     private final ColumnRepository repository;
+
 
     @Override
     @Transactional
     public HplcColumn create(HplcColumn hplcColumn) {
         log.info("Попытка добавления новой колонки Администратором: {}", hplcColumn);
+        if (!StringUtils.hasText(hplcColumn.getInternalCode())) {
+            hplcColumn.setInternalCode(generateInternalCode(hplcColumn));
+        }
         if (repository.existsByInternalCode(hplcColumn.getInternalCode())) {
             throw new ConflictException("Колонка с internalCode " + hplcColumn.getInternalCode() + " уже существует.");
         }
         hplcColumn.setStatus(ColumnStatus.AVAILABLE);
-        if(!StringUtils.hasText(hplcColumn.getInternalCode())){
-            if(hplcColumn.getOwnerOrganization()==null){
-
-            }
-        }
         HplcColumn savedColumn = repository.save(hplcColumn);
         log.info("Колонка добавлена: {}", savedColumn);
         return savedColumn;
@@ -109,5 +111,15 @@ public class ColumnServiceImpl implements ColumnService {
         existingColumn.setInternalCode(newColumn.getInternalCode());
         existingColumn.setStorageLocation(newColumn.getStorageLocation());
         return existingColumn;
+    }
+
+    private String generateInternalCode(HplcColumn hplcColumn) {
+        int currentYear = LocalDate.now().getYear();
+        if (hplcColumn.isExternal()) {
+            Long sequenceValue = repository.getNextExtSequenceValue();
+            return String.format("%s-%d-%03d", EXT_PREFIX, currentYear, sequenceValue);
+        }
+        Long sequenceValue = repository.getNextIntSequenceValue();
+        return String.format("%s-%d-%03d", INT_PREFIX, currentYear, sequenceValue);
     }
 }
