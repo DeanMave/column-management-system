@@ -11,8 +11,8 @@ import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.exception.ValidationException;
 import io.github.deanmave.hplclims.repository.UsageLogRepository;
+import io.github.deanmave.hplclims.repository.UserRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
-import io.github.deanmave.hplclims.service.interfaces.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class UsageLogServiceImplTest {
     private ColumnService columnService;
 
     @Mock
-    private UserService userService;
+    private UserRepository userRepository;
 
     @InjectMocks
     private UsageLogServiceImpl service;
@@ -79,7 +79,7 @@ class UsageLogServiceImplTest {
         @Test
         void whenUserIsInactive_ShouldThrowValidationException() {
             testUser.setActive(false);
-            when(userService.getById(1L)).thenReturn(testUser);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             assertThatThrownBy(() -> service.startUsage(1L, 1L, request))
                     .isInstanceOf(ValidationException.class);
@@ -91,7 +91,7 @@ class UsageLogServiceImplTest {
         @Test
         void whenColumnIsNotAvailable_ShouldThrowConflictException() {
             testColumn.setStatus(ColumnStatus.IN_USE);
-            when(userService.getById(1L)).thenReturn(testUser);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(columnService.getById(1L)).thenReturn(testColumn);
 
             assertThatThrownBy(() -> service.startUsage(1L, 1L, request))
@@ -103,7 +103,7 @@ class UsageLogServiceImplTest {
 
         @Test
         void whenDataIsValid_ShouldCreateLogAndSetColumnInUse() {
-            when(userService.getById(1L)).thenReturn(testUser);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(columnService.getById(1L)).thenReturn(testColumn);
 
             ColumnUsageLog savedLogDb = new ColumnUsageLog();
@@ -373,7 +373,7 @@ class UsageLogServiceImplTest {
 
     @Test
     void getLogsByUser_WhenUserNotFound_ShouldThrowNotFoundException() {
-        when(userService.getById(1L)).thenThrow(NotFoundException.class);
+        when(userRepository.findById(1L)).thenThrow(NotFoundException.class);
 
         assertThatThrownBy(() -> service.getLogsByUser(1L))
                 .isInstanceOf(NotFoundException.class);

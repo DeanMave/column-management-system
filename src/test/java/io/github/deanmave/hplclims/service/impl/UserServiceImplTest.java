@@ -2,6 +2,10 @@ package io.github.deanmave.hplclims.service.impl;
 
 import io.github.deanmave.hplclims.domain.User;
 import io.github.deanmave.hplclims.domain.UserRole;
+import io.github.deanmave.hplclims.domain.dto.request.UserCreateDto;
+import io.github.deanmave.hplclims.domain.dto.request.UserUpdateDto;
+import io.github.deanmave.hplclims.domain.dto.response.UserResponseDto;
+import io.github.deanmave.hplclims.domain.mapper.UserMapper;
 import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.repository.UserRepository;
@@ -30,10 +34,16 @@ class UserServiceImplTest {
     @Mock
     private UserRepository repository;
 
+    @Mock
+    private UserMapper mapper;
+
     @InjectMocks
     private UserServiceImpl service;
 
     private User testUser;
+    private UserCreateDto testCreateDto;
+    private UserUpdateDto testUpdateDto;
+    private UserResponseDto testResponseDto;
 
     @BeforeEach
     void setUp() {
@@ -45,29 +55,54 @@ class UserServiceImplTest {
         testUser.setLastName("Иванов");
         testUser.setMiddleName("Иванович");
         testUser.setRole(UserRole.USER);
+
+        testCreateDto = new UserCreateDto();
+        testCreateDto.setLogin("testLogin");
+        testCreateDto.setPassword("password123");
+        testCreateDto.setFirstName("Иван");
+        testCreateDto.setLastName("Иванов");
+        testCreateDto.setMiddleName("Иванович");
+        testCreateDto.setRole(UserRole.USER);
+
+        testUpdateDto = new UserUpdateDto();
+        testUpdateDto.setFirstName("Олег");
+        testUpdateDto.setLastName("Холмов");
+        testUpdateDto.setMiddleName("Викторович");
+
+        testResponseDto = new UserResponseDto();
+        testResponseDto.setId(1L);
+        testResponseDto.setLogin("testLogin");
+        testResponseDto.setFirstName("Иван");
+        testResponseDto.setLastName("Иванов");
+        testResponseDto.setMiddleName("Иванович");
+        testResponseDto.setRole(UserRole.USER);
+        testResponseDto.setActive(true);
     }
 
     @Test
     void create_WhenLoginIsUnique_ShouldSaveAndReturnUser() {
         when(repository.existsByLogin(testUser.getLogin())).thenReturn(false);
+        when(mapper.toUser(testCreateDto)).thenReturn(testUser);
+        when(repository.save(testUser)).thenReturn(testUser);
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        User savedUserDb = new User();
-        savedUserDb.setId(1L);
-        savedUserDb.setLogin(testUser.getLogin());
-        when(repository.save(testUser)).thenReturn(savedUserDb);
+        UserResponseDto result = service.create(testCreateDto);
 
-        User result = service.create(testUser);
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getLogin()).isEqualTo("testLogin");
 
-        assertThat(result).isEqualTo(savedUserDb);
-        assertThat(result.getLogin()).isEqualTo(testUser.getLogin());
+        verify(repository).existsByLogin(testCreateDto.getLogin());
+        verify(mapper).toUser(testCreateDto);
         verify(repository).save(testUser);
+        verify(mapper).toUserResponseDto(testUser);
     }
 
     @Test
     void create_WhenLoginAlreadyExists_ShouldThrowConflictException() {
-        when(repository.existsByLogin(testUser.getLogin())).thenReturn(true);
+        when(repository.existsByLogin(testCreateDto.getLogin())).thenReturn(true);
 
-        assertThatThrownBy(() -> service.create(testUser)).isInstanceOf(ConflictException.class);
+        assertThatThrownBy(() -> service.create(testCreateDto)).isInstanceOf(ConflictException.class);
 
         verify(repository, never()).save(any(User.class));
     }
@@ -75,8 +110,9 @@ class UserServiceImplTest {
     @Test
     void getAll_WhenUsersExist_ShouldReturnListOfUsers() {
         when(repository.findAll()).thenReturn(List.of(testUser));
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getAll()).containsExactly(testUser);
+        assertThat(service.getAll()).containsExactly(testResponseDto);
     }
 
     @Test
@@ -89,8 +125,9 @@ class UserServiceImplTest {
     @Test
     void getById_WhenUserExist_ShouldReturnUser() {
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getById(1L)).isEqualTo(testUser);
+        assertThat(service.getById(1L)).isEqualTo(testResponseDto);
     }
 
     @Test
@@ -105,16 +142,19 @@ class UserServiceImplTest {
     void getByActive_WhenActiveUsersExist_ShouldReturnListOfUsers() {
         testUser.setActive(true);
         when(repository.findByIsActive(true)).thenReturn(List.of(testUser));
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getByActive(true)).containsExactly(testUser);
+        assertThat(service.getByActive(true)).containsExactly(testResponseDto);
     }
 
     @Test
     void getByActive_WhenNotActiveUsersExist_ShouldReturnListOfUsers() {
         testUser.setActive(false);
+        testResponseDto.setActive(false);
         when(repository.findByIsActive(false)).thenReturn(List.of(testUser));
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getByActive(false)).containsExactly(testUser);
+        assertThat(service.getByActive(false)).containsExactly(testResponseDto);
     }
 
     @Test
@@ -132,10 +172,11 @@ class UserServiceImplTest {
         savedUserDb.setId(1L);
         savedUserDb.setActive(false);
         when(repository.save(testUser)).thenReturn(savedUserDb);
+        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
 
-        User result = service.changeStatus(1L, false);
+        UserResponseDto result = service.changeStatus(1L, false);
 
-        assertThat(result).isEqualTo(savedUserDb);
+        assertThat(result).isEqualTo(testResponseDto);
         assertThat(testUser.isActive()).isEqualTo(false);
     }
 
@@ -157,10 +198,11 @@ class UserServiceImplTest {
         savedUserDb.setId(1L);
         savedUserDb.setLogin("newLogin");
         when(repository.save(testUser)).thenReturn(savedUserDb);
+        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
 
-        User result = service.changeLogin(1L, "newLogin");
+        UserResponseDto result = service.changeLogin(1L, "newLogin");
 
-        assertThat(result).isEqualTo(savedUserDb);
+        assertThat(result).isEqualTo(testResponseDto);
         assertThat(testUser.getLogin()).isEqualTo("newLogin");
     }
 
@@ -173,7 +215,7 @@ class UserServiceImplTest {
         assertThatThrownBy(() -> service.changeLogin(1L, "newLogin"))
                 .isInstanceOf(ConflictException.class);
 
-        verify(repository,never()).save(any(User.class));
+        verify(repository, never()).save(any(User.class));
 
         assertThat(testUser.getLogin()).isEqualTo("testLogin");
     }
@@ -182,9 +224,9 @@ class UserServiceImplTest {
     void changeLogin_WhenLoginUnchanged_ShouldNotCheckUniqueness() {
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        service.changeLogin(1L,testUser.getLogin());
+        service.changeLogin(1L, testUser.getLogin());
 
-        verify(repository,never()).existsByLogin(anyString());
+        verify(repository, never()).existsByLogin(anyString());
     }
 
     @Test
@@ -205,10 +247,11 @@ class UserServiceImplTest {
         savedUserDb.setId(1L);
         savedUserDb.setPassword("newPassword");
         when(repository.save(testUser)).thenReturn(savedUserDb);
+        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
 
-        User result = service.changePassword(1L, "newPassword");
+        UserResponseDto result = service.changePassword(1L, "newPassword");
 
-        assertThat(result).isEqualTo(savedUserDb);
+        assertThat(result).isEqualTo(testResponseDto);
         assertThat(testUser.getPassword()).isEqualTo("newPassword");
     }
 
@@ -230,10 +273,11 @@ class UserServiceImplTest {
         savedUserDb.setId(1L);
         savedUserDb.setRole(UserRole.VIEWER);
         when(repository.save(testUser)).thenReturn(savedUserDb);
+        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
 
-        User result = service.changeRole(1L, UserRole.VIEWER);
+        UserResponseDto result = service.changeRole(1L, UserRole.VIEWER);
 
-        assertThat(result).isEqualTo(savedUserDb);
+        assertThat(result).isEqualTo(testResponseDto);
         assertThat(testUser.getRole()).isEqualTo(UserRole.VIEWER);
     }
 
@@ -251,30 +295,39 @@ class UserServiceImplTest {
     void updateProfile_WhenUserExists_ShouldUpdateProfileAndReturnUser() {
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        User newUser = new User();
-        newUser.setId(1L);
-        newUser.setFirstName("Олег");
-        newUser.setLastName("Холмов");
-        newUser.setMiddleName("Викторович");
-
         User savedUserDb = new User();
         savedUserDb.setId(1L);
+        savedUserDb.setFirstName("Олег");
+        savedUserDb.setLastName("Холмов");
+        savedUserDb.setMiddleName("Викторович");
+
+        when(mapper.updateFromDto(testUser, testUpdateDto)).thenAnswer(invocation -> {
+            testUser.setFirstName("Олег");
+            testUser.setLastName("Холмов");
+            testUser.setMiddleName("Викторович");
+            return testUser;
+        });
+
+        testResponseDto.setFirstName("Олег");
+        testResponseDto.setLastName("Холмов");
+        testResponseDto.setMiddleName("Викторович");
 
         when(repository.save(testUser)).thenReturn(savedUserDb);
+        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
 
-        User result = service.updateProfile(1L, newUser);
+        UserResponseDto result = service.updateProfile(1L, testUpdateDto);
 
-        assertThat(result).isEqualTo(savedUserDb);
-        assertThat(testUser.getFirstName()).isEqualTo("Олег");
-        assertThat(testUser.getLastName()).isEqualTo("Холмов");
-        assertThat(testUser.getMiddleName()).isEqualTo("Викторович");
+        assertThat(result).isEqualTo(testResponseDto);
+        assertThat(result.getFirstName()).isEqualTo("Олег");
+        assertThat(result.getLastName()).isEqualTo("Холмов");
+        assertThat(result.getMiddleName()).isEqualTo("Викторович");
     }
 
     @Test
     void updateProfile_WhenUserDoesNotExists_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.updateProfile(1L, testUser))
+        assertThatThrownBy(() -> service.updateProfile(1L, testUpdateDto))
                 .isInstanceOf(NotFoundException.class);
 
         verify(repository, never()).save(any(User.class));

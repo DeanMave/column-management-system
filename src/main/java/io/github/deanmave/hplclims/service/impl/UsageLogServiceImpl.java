@@ -7,10 +7,12 @@ import io.github.deanmave.hplclims.domain.User;
 import io.github.deanmave.hplclims.domain.dto.request.CorrectUsageLogRequest;
 import io.github.deanmave.hplclims.domain.dto.request.EndUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.request.StartUsageRequest;
+import io.github.deanmave.hplclims.domain.dto.response.UserResponseDto;
 import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.exception.ValidationException;
 import io.github.deanmave.hplclims.repository.UsageLogRepository;
+import io.github.deanmave.hplclims.repository.UserRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
 import io.github.deanmave.hplclims.service.interfaces.UsageLogService;
 import io.github.deanmave.hplclims.service.interfaces.UserService;
@@ -30,13 +32,14 @@ import java.util.List;
 public class UsageLogServiceImpl implements UsageLogService {
     private final UsageLogRepository repository;
     private final ColumnService columnService;
-    private final UserService userService;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
     public ColumnUsageLog startUsage(Long userId, Long hplcColumnId, StartUsageRequest request) {
         log.info("Попытка взять пользователем:{} колонку:{} в работу", userId, hplcColumnId);
-        User user = userService.getById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
         if (!user.isActive()) {
             throw new ValidationException("Только действующие сотрудники могут брать колонку в работу");
         }
@@ -147,7 +150,8 @@ public class UsageLogServiceImpl implements UsageLogService {
     @Override
     public List<ColumnUsageLog> getLogsByUser(Long userId) {
         log.info("Запрос на получение логов для пользователя с id:{}", userId);
-        userService.getById(userId);
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
         return repository.findByUser_Id(userId);
     }
 
