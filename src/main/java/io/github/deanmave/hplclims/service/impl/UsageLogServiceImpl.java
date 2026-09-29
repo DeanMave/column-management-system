@@ -11,6 +11,7 @@ import io.github.deanmave.hplclims.domain.dto.response.UserResponseDto;
 import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.exception.ValidationException;
+import io.github.deanmave.hplclims.repository.ColumnRepository;
 import io.github.deanmave.hplclims.repository.UsageLogRepository;
 import io.github.deanmave.hplclims.repository.UserRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
@@ -32,6 +33,7 @@ import java.util.List;
 public class UsageLogServiceImpl implements UsageLogService {
     private final UsageLogRepository repository;
     private final ColumnService columnService;
+    private final ColumnRepository columnRepository;
     private final UserRepository userRepository;
 
     @Override
@@ -43,7 +45,8 @@ public class UsageLogServiceImpl implements UsageLogService {
         if (!user.isActive()) {
             throw new ValidationException("Только действующие сотрудники могут брать колонку в работу");
         }
-        HplcColumn hplcColumn = columnService.getById(hplcColumnId);
+        HplcColumn hplcColumn = columnRepository.findById(hplcColumnId)
+                .orElseThrow(() -> new NotFoundException("Колонка с ID " + hplcColumnId + " не найден"));
         if (!hplcColumn.isAvailable()) {
             throw new ConflictException("Колонка с id: " + hplcColumnId + " сейчас занята");
         }

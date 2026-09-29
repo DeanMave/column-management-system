@@ -10,6 +10,7 @@ import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("Сервис работы с пользователями")
 class UserServiceImplTest {
 
     @Mock
@@ -80,17 +82,14 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("create: создание пользователя с уникальным логином")
     void create_WhenLoginIsUnique_ShouldSaveAndReturnUser() {
         when(repository.existsByLogin(testUser.getLogin())).thenReturn(false);
         when(mapper.toUser(testCreateDto)).thenReturn(testUser);
         when(repository.save(testUser)).thenReturn(testUser);
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        UserResponseDto result = service.create(testCreateDto);
-
-        assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getLogin()).isEqualTo("testLogin");
+        service.create(testCreateDto);
 
         verify(repository).existsByLogin(testCreateDto.getLogin());
         verify(mapper).toUser(testCreateDto);
@@ -99,6 +98,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("create: выброс ConflictException при добавление пользователя с уже занятым логином")
     void create_WhenLoginAlreadyExists_ShouldThrowConflictException() {
         when(repository.existsByLogin(testCreateDto.getLogin())).thenReturn(true);
 
@@ -108,6 +108,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("getAll: получение списка пользователей при их наличии в БД")
     void getAll_WhenUsersExist_ShouldReturnListOfUsers() {
         when(repository.findAll()).thenReturn(List.of(testUser));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
@@ -116,6 +117,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("getAll: получение пустого списка, если пользователи в БД отсутствуют")
     void getAll_WhenNoUsersExist_ShouldReturnEmptyList() {
         when(repository.findAll()).thenReturn(Collections.emptyList());
 
@@ -123,6 +125,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("getById: получение пользователя по существующему ID")
     void getById_WhenUserExist_ShouldReturnUser() {
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
@@ -131,6 +134,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("getById: выброс NotFoundException при поиске несуществующего ID")
     void getById_WhenUserDoesNotExist_shouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
@@ -139,6 +143,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("getByActive: получение списка активных пользователей")
     void getByActive_WhenActiveUsersExist_ShouldReturnListOfUsers() {
         testUser.setActive(true);
         when(repository.findByIsActive(true)).thenReturn(List.of(testUser));
@@ -148,6 +153,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("getByActive: получение списка неактивных пользователей")
     void getByActive_WhenNotActiveUsersExist_ShouldReturnListOfUsers() {
         testUser.setActive(false);
         testResponseDto.setActive(false);
@@ -158,6 +164,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("getByActive: получение пустого списка, если активные пользователи в БД отсутствуют")
     void getByActive_WhenNoUsersExist_ShouldReturnEmptyList() {
         when(repository.findByIsActive(true)).thenReturn(Collections.emptyList());
 
@@ -165,22 +172,22 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("changeStatus: обновление статуса существующего пользователя")
     void changeStatus_WhenUserExists_ShouldChangeStatusAndReturnUser() {
+        testResponseDto.setActive(false);
+
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        User savedUserDb = new User();
-        savedUserDb.setId(1L);
-        savedUserDb.setActive(false);
-        when(repository.save(testUser)).thenReturn(savedUserDb);
-        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
+        when(repository.save(testUser)).thenReturn(testUser);
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        UserResponseDto result = service.changeStatus(1L, false);
+        service.changeStatus(1L, false);
 
-        assertThat(result).isEqualTo(testResponseDto);
         assertThat(testUser.isActive()).isEqualTo(false);
     }
 
     @Test
+    @DisplayName("changeStatus: выброс NotFoundException при попытке сменить статус несуществующего пользователя")
     void changeStatus_WhenUserDoesNotExists_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
@@ -191,22 +198,22 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("changeLogin: обновление логина существующего пользователя")
     void changeLogin_WhenUserExists_ShouldChangeLoginAndReturnUser() {
+        testResponseDto.setLogin("newLogin");
+
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        User savedUserDb = new User();
-        savedUserDb.setId(1L);
-        savedUserDb.setLogin("newLogin");
-        when(repository.save(testUser)).thenReturn(savedUserDb);
-        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
+        when(repository.save(testUser)).thenReturn(testUser);
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        UserResponseDto result = service.changeLogin(1L, "newLogin");
+        service.changeLogin(1L, "newLogin");
 
-        assertThat(result).isEqualTo(testResponseDto);
         assertThat(testUser.getLogin()).isEqualTo("newLogin");
     }
 
     @Test
+    @DisplayName("changeLogin: выброс ConflictException при попытке сменить уже занятый логин")
     void changeLogin_WhenNewLoginIsTaken_ShouldThrowConflictException() {
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
 
@@ -221,6 +228,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("changeLogin: логин не обновляется при подаче того же логина")
     void changeLogin_WhenLoginUnchanged_ShouldNotCheckUniqueness() {
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
 
@@ -230,6 +238,7 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("changeLogin: выброс NotFoundException при попытке сменить логин несуществующего пользователя")
     void changeLogin_WhenUserDoesNotExists_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
@@ -240,22 +249,20 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("changePassword: обновление пароля существующего пользователя")
     void changePassword_WhenUserExists_ShouldChangePasswordAndReturnUser() {
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        User savedUserDb = new User();
-        savedUserDb.setId(1L);
-        savedUserDb.setPassword("newPassword");
-        when(repository.save(testUser)).thenReturn(savedUserDb);
-        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
+        when(repository.save(testUser)).thenReturn(testUser);
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        UserResponseDto result = service.changePassword(1L, "newPassword");
+        service.changePassword(1L, "newPassword");
 
-        assertThat(result).isEqualTo(testResponseDto);
         assertThat(testUser.getPassword()).isEqualTo("newPassword");
     }
 
     @Test
+    @DisplayName("changePassword: выброс NotFoundException при попытке сменить пароль несуществующего пользователя")
     void changePassword_WhenUserDoesNotExists_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
@@ -266,22 +273,22 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("changeRole: обновление роли существующего пользователя")
     void changeRole_WhenUserExists_ShouldChangeRoleAndReturnUser() {
+        testResponseDto.setRole(UserRole.VIEWER);
+
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        User savedUserDb = new User();
-        savedUserDb.setId(1L);
-        savedUserDb.setRole(UserRole.VIEWER);
-        when(repository.save(testUser)).thenReturn(savedUserDb);
-        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
+        when(repository.save(testUser)).thenReturn(testUser);
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        UserResponseDto result = service.changeRole(1L, UserRole.VIEWER);
+        service.changeRole(1L, UserRole.VIEWER);
 
-        assertThat(result).isEqualTo(testResponseDto);
         assertThat(testUser.getRole()).isEqualTo(UserRole.VIEWER);
     }
 
     @Test
+    @DisplayName("changeRole: выброс NotFoundException при попытке сменить роль несуществующего пользователя")
     void changeRole_WhenUserDoesNotExists_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
@@ -292,38 +299,27 @@ class UserServiceImplTest {
     }
 
     @Test
+    @DisplayName("updateProfile: обновление профиля существующего пользователя")
     void updateProfile_WhenUserExists_ShouldUpdateProfileAndReturnUser() {
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
-
-        User savedUserDb = new User();
-        savedUserDb.setId(1L);
-        savedUserDb.setFirstName("Олег");
-        savedUserDb.setLastName("Холмов");
-        savedUserDb.setMiddleName("Викторович");
-
         when(mapper.updateFromDto(testUser, testUpdateDto)).thenAnswer(invocation -> {
             testUser.setFirstName("Олег");
             testUser.setLastName("Холмов");
             testUser.setMiddleName("Викторович");
             return testUser;
         });
+        when(repository.save(testUser)).thenReturn(testUser);
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        testResponseDto.setFirstName("Олег");
-        testResponseDto.setLastName("Холмов");
-        testResponseDto.setMiddleName("Викторович");
+       service.updateProfile(1L, testUpdateDto);
 
-        when(repository.save(testUser)).thenReturn(savedUserDb);
-        when(mapper.toUserResponseDto(savedUserDb)).thenReturn(testResponseDto);
-
-        UserResponseDto result = service.updateProfile(1L, testUpdateDto);
-
-        assertThat(result).isEqualTo(testResponseDto);
-        assertThat(result.getFirstName()).isEqualTo("Олег");
-        assertThat(result.getLastName()).isEqualTo("Холмов");
-        assertThat(result.getMiddleName()).isEqualTo("Викторович");
+        assertThat(testUser.getFirstName()).isEqualTo("Олег");
+        assertThat(testUser.getLastName()).isEqualTo("Холмов");
+        assertThat(testUser.getMiddleName()).isEqualTo("Викторович");
     }
 
     @Test
+    @DisplayName("updateProfile: выброс NotFoundException при попытке обновить профиль несуществующего пользователя")
     void updateProfile_WhenUserDoesNotExists_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 

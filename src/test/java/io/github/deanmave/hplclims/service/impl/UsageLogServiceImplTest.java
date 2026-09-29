@@ -10,6 +10,7 @@ import io.github.deanmave.hplclims.domain.dto.request.StartUsageRequest;
 import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.exception.ValidationException;
+import io.github.deanmave.hplclims.repository.ColumnRepository;
 import io.github.deanmave.hplclims.repository.UsageLogRepository;
 import io.github.deanmave.hplclims.repository.UserRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
@@ -46,6 +47,9 @@ class UsageLogServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ColumnRepository columnRepository;
 
     @InjectMocks
     private UsageLogServiceImpl service;
@@ -92,7 +96,7 @@ class UsageLogServiceImplTest {
         void whenColumnIsNotAvailable_ShouldThrowConflictException() {
             testColumn.setStatus(ColumnStatus.IN_USE);
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(columnService.getById(1L)).thenReturn(testColumn);
+            when(columnRepository.findById(1L)).thenReturn(Optional.of(testColumn));
 
             assertThatThrownBy(() -> service.startUsage(1L, 1L, request))
                     .isInstanceOf(ConflictException.class);
@@ -104,7 +108,7 @@ class UsageLogServiceImplTest {
         @Test
         void whenDataIsValid_ShouldCreateLogAndSetColumnInUse() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(columnService.getById(1L)).thenReturn(testColumn);
+            when(columnRepository.findById(1L)).thenReturn(Optional.of(testColumn));
 
             ColumnUsageLog savedLogDb = new ColumnUsageLog();
             savedLogDb.setId(1L);
