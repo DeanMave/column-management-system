@@ -26,6 +26,5 @@ public class ColumnUpdateDto {
     private String ownerOrganization;
     private LocalDate returnDate;
     private ColumnStatus status;
-    private String internalCode;
     private String storageLocation;
 }

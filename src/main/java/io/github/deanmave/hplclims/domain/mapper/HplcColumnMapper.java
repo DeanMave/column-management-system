@@ -13,6 +13,9 @@ public interface HplcColumnMapper {
     ColumnResponseDto toColumnResponseDto(HplcColumn hplcColumn);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "internalCode", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "returnDate",ignore = true)
     HplcColumn toHplcColumn(ColumnCreateDto dto);
 
     @Mapping(target = "id",ignore = true)

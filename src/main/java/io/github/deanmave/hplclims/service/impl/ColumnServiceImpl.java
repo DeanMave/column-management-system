@@ -2,7 +2,10 @@ package io.github.deanmave.hplclims.service.impl;
 
 import io.github.deanmave.hplclims.domain.ColumnStatus;
 import io.github.deanmave.hplclims.domain.HplcColumn;
-import io.github.deanmave.hplclims.exception.ConflictException;
+import io.github.deanmave.hplclims.domain.dto.request.ColumnCreateDto;
+import io.github.deanmave.hplclims.domain.dto.request.ColumnUpdateDto;
+import io.github.deanmave.hplclims.domain.dto.response.ColumnResponseDto;
+import io.github.deanmave.hplclims.domain.mapper.HplcColumnMapper;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.repository.ColumnRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
@@ -10,10 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -25,35 +27,34 @@ public class ColumnServiceImpl implements ColumnService {
     private static final String EXT_PREFIX = "EXT";
 
     private final ColumnRepository repository;
+    private final HplcColumnMapper mapper;
 
 
     @Override
     @Transactional
-    public HplcColumn create(HplcColumn hplcColumn) {
-        log.info("Попытка добавления новой колонки Администратором: {}", hplcColumn);
-        if (!StringUtils.hasText(hplcColumn.getInternalCode())) {
-            hplcColumn.setInternalCode(generateInternalCode(hplcColumn));
-        }
-        if (repository.existsByInternalCode(hplcColumn.getInternalCode())) {
-            throw new ConflictException("Колонка с internalCode " + hplcColumn.getInternalCode() + " уже существует.");
-        }
-        hplcColumn.setStatus(ColumnStatus.AVAILABLE);
-        HplcColumn savedColumn = repository.save(hplcColumn);
+    public ColumnResponseDto create(ColumnCreateDto createDto) {
+        log.info("Попытка добавления новой колонки Администратором: {}", createDto);
+        HplcColumn createColumn = mapper.toHplcColumn(createDto);
+        createColumn.setInternalCode(generateInternalCode(createColumn));
+        createColumn.setStatus(ColumnStatus.AVAILABLE);
+        HplcColumn savedColumn = repository.save(createColumn);
         log.info("Колонка добавлена: {}", savedColumn);
-        return savedColumn;
+        return mapper.toColumnResponseDto(savedColumn);
     }
 
     @Override
-    public List<HplcColumn> getAll() {
+    public List<ColumnResponseDto> getAll() {
         log.info("Запрос на получение всех колонок");
-        return repository.findAll();
+        return repository.findAll().stream()
+                .map(mapper::toColumnResponseDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public HplcColumn getById(Long id) {
+    public ColumnResponseDto getById(Long id) {
         log.info("Запрос поиска колонки по ID: {}", id);
-        return repository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Колонка с ID " + id + " не найдена"));
+        return mapper.toColumnResponseDto(repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Колонка с ID " + id + " не найдена")));
     }
 
     @Override
@@ -69,53 +70,30 @@ public class ColumnServiceImpl implements ColumnService {
 
     @Override
     @Transactional
-    public HplcColumn changeStatus(Long id, ColumnStatus newStatus) {
+    public ColumnResponseDto changeStatus(Long id, ColumnStatus newStatus) {
         log.info("Попытка обновления колонки с ID: {}", id);
         HplcColumn existingColumn = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
         existingColumn.setStatus(newStatus);
         HplcColumn updatedColumn = repository.save(existingColumn);
         log.info("Колонка обновлена: {}", updatedColumn);
-        return updatedColumn;
+        return mapper.toColumnResponseDto(updatedColumn);
     }
 
     @Override
     @Transactional
-    public HplcColumn correctData(Long id, HplcColumn newColumn) {
+    public ColumnResponseDto correctData(Long id, ColumnUpdateDto updateDto) {
         log.info("Попытка обновления колонки с ID: {}", id);
         HplcColumn existingColumn = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
-        HplcColumn updatedColumn = repository.save(setData(existingColumn, newColumn));
+        HplcColumn updatedColumn = repository.save(mapper.updateFromDto(existingColumn,updateDto));
         log.info("Колонка обновлена: {}", updatedColumn);
-        return updatedColumn;
+        return mapper.toColumnResponseDto(updatedColumn);
     }
 
-    private HplcColumn setData(HplcColumn existingColumn, HplcColumn newColumn) {
-        if (!existingColumn.getInternalCode().equals(newColumn.getInternalCode())
-            && repository.existsByInternalCode(newColumn.getInternalCode())) {
-            throw new ConflictException("internalCode уже занят: " + newColumn.getInternalCode());
-        }
-        existingColumn.setManufacturer(newColumn.getManufacturer());
-        existingColumn.setSerialNumber(newColumn.getSerialNumber());
-        existingColumn.setPartNumber(newColumn.getPartNumber());
-        existingColumn.setLength(newColumn.getLength());
-        existingColumn.setDiameter(newColumn.getDiameter());
-        existingColumn.setParticleSize(newColumn.getParticleSize());
-        existingColumn.setInstallationDate(newColumn.getInstallationDate());
-        existingColumn.setPhMin(newColumn.getPhMin());
-        existingColumn.setPhMax(newColumn.getPhMax());
-        existingColumn.setMaxPressure(newColumn.getMaxPressure());
-        existingColumn.setOwnerOrganization(newColumn.getOwnerOrganization());
-        existingColumn.setReturnDate(newColumn.getReturnDate());
-        existingColumn.setStationaryPhase(newColumn.getStationaryPhase());
-        existingColumn.setInternalCode(newColumn.getInternalCode());
-        existingColumn.setStorageLocation(newColumn.getStorageLocation());
-        return existingColumn;
-    }
-
-    private String generateInternalCode(HplcColumn hplcColumn) {
-        int currentYear = LocalDate.now().getYear();
-        if (hplcColumn.isExternal()) {
+    private String generateInternalCode(HplcColumn createColumn) {
+        int currentYear = createColumn.getInstallationDate().getYear();
+        if (createColumn.isExternal()) {
             Long sequenceValue = repository.getNextExtSequenceValue();
             return String.format("%s-%d-%03d", EXT_PREFIX, currentYear, sequenceValue);
         }

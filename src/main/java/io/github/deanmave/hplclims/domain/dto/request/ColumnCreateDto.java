@@ -43,7 +43,5 @@ public class ColumnCreateDto {
     @Positive(message = "Число должно быть больше нуля")
     private Integer maxPressure;
     private String ownerOrganization;
-    private LocalDate returnDate;
-    private String internalCode;
     private String storageLocation;
 }

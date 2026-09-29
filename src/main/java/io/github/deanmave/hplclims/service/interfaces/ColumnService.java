@@ -2,19 +2,22 @@ package io.github.deanmave.hplclims.service.interfaces;
 
 import io.github.deanmave.hplclims.domain.ColumnStatus;
 import io.github.deanmave.hplclims.domain.HplcColumn;
+import io.github.deanmave.hplclims.domain.dto.request.ColumnCreateDto;
+import io.github.deanmave.hplclims.domain.dto.request.ColumnUpdateDto;
+import io.github.deanmave.hplclims.domain.dto.response.ColumnResponseDto;
 
 import java.util.List;
 
 public interface ColumnService {
-    HplcColumn create(HplcColumn hplcColumn);
+    ColumnResponseDto create(ColumnCreateDto createDto);
 
-    List<HplcColumn> getAll();
+    List<ColumnResponseDto> getAll();
 
-    HplcColumn getById(Long id);
+    ColumnResponseDto getById(Long id);
 
     void deleteById(Long id);
 
-    HplcColumn changeStatus(Long id, ColumnStatus newStatus);
+    ColumnResponseDto changeStatus(Long id, ColumnStatus newStatus);
 
-    HplcColumn correctData(Long id, HplcColumn newColumn);
+    ColumnResponseDto correctData(Long id, ColumnUpdateDto updateDto);
 }
