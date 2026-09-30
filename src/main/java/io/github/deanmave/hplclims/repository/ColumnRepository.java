@@ -5,8 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 public interface ColumnRepository extends JpaRepository<HplcColumn, Long> {
-    boolean existsByInternalCode(String internalCode);
-
     @Query(value = "SELECT nextval('column_int_code_seq')", nativeQuery = true)
     Long getNextIntSequenceValue();
 
