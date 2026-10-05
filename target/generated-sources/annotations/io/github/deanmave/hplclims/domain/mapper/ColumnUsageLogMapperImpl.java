@@ -1,18 +1,19 @@
 package io.github.deanmave.hplclims.domain.mapper;
 
 import io.github.deanmave.hplclims.domain.ColumnUsageLog;
+import io.github.deanmave.hplclims.domain.HplcColumn;
+import io.github.deanmave.hplclims.domain.User;
 import io.github.deanmave.hplclims.domain.dto.request.CorrectUsageLogRequest;
+import io.github.deanmave.hplclims.domain.dto.request.StartUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.response.UsageLogResponseDto;
-import java.util.ArrayList;
-import java.util.List;
 import javax.annotation.processing.Generated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-09-28T20:20:25+0300",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.7 (Amazon.com Inc.)"
+    date = "2026-10-05T19:32:15+0300",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.12.1 (Amazon.com Inc.)"
 )
 @Component
 public class ColumnUsageLogMapperImpl implements ColumnUsageLogMapper {
@@ -21,6 +22,26 @@ public class ColumnUsageLogMapperImpl implements ColumnUsageLogMapper {
     private UserMapper userMapper;
     @Autowired
     private HplcColumnMapper hplcColumnMapper;
+
+    @Override
+    public ColumnUsageLog toColumnUsageLog(StartUsageRequest request, User user, HplcColumn hplcColumn) {
+        if ( request == null && user == null && hplcColumn == null ) {
+            return null;
+        }
+
+        ColumnUsageLog columnUsageLog = new ColumnUsageLog();
+
+        if ( request != null ) {
+            columnUsageLog.setTaskNumber( request.getTaskNumber() );
+            columnUsageLog.setDrugName( request.getDrugName() );
+        }
+        if ( hplcColumn != null ) {
+            columnUsageLog.setMaxPressure( hplcColumn.getMaxPressure() );
+        }
+        columnUsageLog.setUser( user );
+
+        return columnUsageLog;
+    }
 
     @Override
     public UsageLogResponseDto toUsageLogResponseDto(ColumnUsageLog columnUsageLog) {
@@ -70,24 +91,7 @@ public class ColumnUsageLogMapperImpl implements ColumnUsageLogMapper {
         if ( dto.getMaxPressure() != null ) {
             columnUsageLog.setMaxPressure( dto.getMaxPressure() );
         }
-        if ( dto.getEndDate() != null ) {
-            columnUsageLog.setEndDate( dto.getEndDate() );
-        }
 
         return columnUsageLog;
-    }
-
-    @Override
-    public List<UsageLogResponseDto> toDtoList(List<ColumnUsageLog> logs) {
-        if ( logs == null ) {
-            return null;
-        }
-
-        List<UsageLogResponseDto> list = new ArrayList<UsageLogResponseDto>( logs.size() );
-        for ( ColumnUsageLog columnUsageLog : logs ) {
-            list.add( toUsageLogResponseDto( columnUsageLog ) );
-        }
-
-        return list;
     }
 }

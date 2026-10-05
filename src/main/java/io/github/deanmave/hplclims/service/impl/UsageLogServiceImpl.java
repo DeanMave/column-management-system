@@ -7,7 +7,8 @@ import io.github.deanmave.hplclims.domain.User;
 import io.github.deanmave.hplclims.domain.dto.request.CorrectUsageLogRequest;
 import io.github.deanmave.hplclims.domain.dto.request.EndUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.request.StartUsageRequest;
-import io.github.deanmave.hplclims.domain.dto.response.UserResponseDto;
+import io.github.deanmave.hplclims.domain.dto.response.UsageLogResponseDto;
+import io.github.deanmave.hplclims.domain.mapper.ColumnUsageLogMapper;
 import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.exception.ValidationException;
@@ -16,7 +17,6 @@ import io.github.deanmave.hplclims.repository.UsageLogRepository;
 import io.github.deanmave.hplclims.repository.UserRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
 import io.github.deanmave.hplclims.service.interfaces.UsageLogService;
-import io.github.deanmave.hplclims.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +25,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -35,10 +36,11 @@ public class UsageLogServiceImpl implements UsageLogService {
     private final ColumnService columnService;
     private final ColumnRepository columnRepository;
     private final UserRepository userRepository;
+    private final ColumnUsageLogMapper mapper;
 
     @Override
     @Transactional
-    public ColumnUsageLog startUsage(Long userId, Long hplcColumnId, StartUsageRequest request) {
+    public UsageLogResponseDto startUsage(Long userId, Long hplcColumnId, StartUsageRequest request) {
         log.info("Попытка взять пользователем:{} колонку:{} в работу", userId, hplcColumnId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
@@ -54,20 +56,16 @@ public class UsageLogServiceImpl implements UsageLogService {
             throw new ValidationException("Поля с номером задания и наименованием препарата должны быть заполнены");
         }
         columnService.changeStatus(hplcColumnId, ColumnStatus.IN_USE);
-        ColumnUsageLog newLog = new ColumnUsageLog();
-        newLog.setUser(user);
-        newLog.setHplcColumn(hplcColumn);
+        ColumnUsageLog newLog = mapper.toColumnUsageLog(request,user,hplcColumn);
         newLog.setStartDate(LocalDate.now());
-        newLog.setTaskNumber(request.getTaskNumber());
-        newLog.setDrugName(request.getDrugName());
         ColumnUsageLog savedLog = repository.save(newLog);
         log.info("Лог добавлен:{}", savedLog.getId());
-        return savedLog;
+        return mapper.toUsageLogResponseDto(savedLog);
     }
 
     @Override
     @Transactional
-    public ColumnUsageLog endUsage(Long logId, EndUsageRequest request) {
+    public UsageLogResponseDto endUsage(Long logId, EndUsageRequest request) {
         log.info("Попытка завершения анализа для лога:{}", logId);
         ColumnUsageLog existLog = repository.findById(logId)
                 .orElseThrow(() -> new NotFoundException("Лога с id: " + logId + " не найдено"));
@@ -89,12 +87,12 @@ public class UsageLogServiceImpl implements UsageLogService {
         columnService.changeStatus(existLog.getHplcColumn().getId(), ColumnStatus.AVAILABLE);
         ColumnUsageLog endLog = repository.save(existLog);
         log.info("Лог успешно завершен:{}", endLog.getId());
-        return endLog;
+        return mapper.toUsageLogResponseDto(endLog);
     }
 
     @Override
     @Transactional
-    public ColumnUsageLog rejectUsage(Long logId, String reason, LocalDate rejectionDate) {
+    public UsageLogResponseDto rejectUsage(Long logId, String reason, LocalDate rejectionDate) {
         log.info("Попытка отказа от колонки для лога:{}", logId);
         ColumnUsageLog existLog = repository.findById(logId)
                 .orElseThrow(() -> new NotFoundException("Лога с id: " + logId + " не найдено"));
@@ -112,22 +110,15 @@ public class UsageLogServiceImpl implements UsageLogService {
         columnService.changeStatus(existLog.getHplcColumn().getId(), ColumnStatus.AVAILABLE);
         ColumnUsageLog savedLog = repository.save(existLog);
         log.info("Отказ от колонки завершен, лог успешно закрыт:{}", savedLog.getId());
-        return savedLog;
+        return mapper.toUsageLogResponseDto(savedLog);
     }
 
     @Override
     @Transactional
-    public ColumnUsageLog correctLog(Long logId, CorrectUsageLogRequest request) {
+    public UsageLogResponseDto correctLog(Long logId, CorrectUsageLogRequest request) {
         log.info("Попытка изменения существующего лога с ID: {}", logId);
         ColumnUsageLog existLog = repository.findById(logId)
                 .orElseThrow(() -> new NotFoundException("Лога с id: " + logId + " не найдено"));
-        if (StringUtils.hasText(request.getTaskNumber())) existLog.setTaskNumber(request.getTaskNumber());
-        if (StringUtils.hasText(request.getDrugName())) existLog.setDrugName(request.getDrugName());
-        if (StringUtils.hasText(request.getAnalysisParameters()))
-            existLog.setAnalysisParameters(request.getAnalysisParameters());
-        if (StringUtils.hasText(request.getStoragePhase())) existLog.setStoragePhase(request.getStoragePhase());
-        if (request.getMinPressure() != null) existLog.setMinPressure(request.getMinPressure());
-        if (request.getMaxPressure() != null) existLog.setMaxPressure(request.getMaxPressure());
         if (request.getEndDate() != null) {
             if (request.getEndDate().isBefore(existLog.getStartDate()) || request.getEndDate().isAfter(LocalDate.now())) {
                 throw new ValidationException("Дата завершения не может быть раньше начальной или позже сегодняшней даты");
@@ -138,29 +129,36 @@ public class UsageLogServiceImpl implements UsageLogService {
                 columnService.changeStatus(existLog.getHplcColumn().getId(), ColumnStatus.AVAILABLE);
             }
         }
-        ColumnUsageLog endLog = repository.save(existLog);
+        ColumnUsageLog updatedLog = mapper.updateFromDto(existLog,request);
+        ColumnUsageLog endLog = repository.save(updatedLog);
         log.info("Лог успешно изменён:{}", endLog.getId());
-        return endLog;
+        return mapper.toUsageLogResponseDto(endLog);
     }
 
     @Override
-    public List<ColumnUsageLog> getLogsByColumn(Long hplcColumnId) {
+    public List<UsageLogResponseDto> getLogsByColumn(Long hplcColumnId) {
         log.info("Запрос на получение логов для колонки с id:{}", hplcColumnId);
         columnService.getById(hplcColumnId);
-        return repository.findByHplcColumn_Id(hplcColumnId);
+        return repository.findByHplcColumn_Id(hplcColumnId).stream()
+                .map(mapper::toUsageLogResponseDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<ColumnUsageLog> getLogsByUser(Long userId) {
+    public List<UsageLogResponseDto> getLogsByUser(Long userId) {
         log.info("Запрос на получение логов для пользователя с id:{}", userId);
         userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
-        return repository.findByUser_Id(userId);
+        return repository.findByUser_Id(userId).stream()
+                .map(mapper::toUsageLogResponseDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<ColumnUsageLog> getActiveUsages() {
+    public List<UsageLogResponseDto> getActiveUsages() {
         log.info("Запрос на получение незавершенных логов");
-        return repository.findByEndDateIsNull();
+        return repository.findByEndDateIsNull().stream()
+                .map(mapper::toUsageLogResponseDto)
+                .collect(Collectors.toList());
     }
 }
