@@ -25,4 +25,6 @@ public interface UserService {
     UserResponseDto changeLogin(Long id, String newLogin);
 
     UserResponseDto changeRole(Long id, UserRole newRole);
+
+    UserResponseDto changePosition(Long id, String position);
 }

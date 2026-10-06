@@ -15,5 +15,6 @@ public class UserResponseDto {
     private String middleName;
     private String login;
     private UserRole role;
+    private String position;
     private boolean isActive;
 }
