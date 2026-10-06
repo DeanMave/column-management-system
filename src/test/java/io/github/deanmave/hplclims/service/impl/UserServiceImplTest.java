@@ -1,6 +1,7 @@
 package io.github.deanmave.hplclims.service.impl;
 
 import io.github.deanmave.hplclims.domain.User;
+import io.github.deanmave.hplclims.domain.UserPosition;
 import io.github.deanmave.hplclims.domain.UserRole;
 import io.github.deanmave.hplclims.domain.dto.request.UserCreateDto;
 import io.github.deanmave.hplclims.domain.dto.request.UserUpdateDto;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
@@ -57,6 +59,7 @@ class UserServiceImplTest {
         testUser.setLastName("Иванов");
         testUser.setMiddleName("Иванович");
         testUser.setRole(UserRole.USER);
+        testUser.setPosition(UserPosition.CHEMIST_ANALYST);
 
         testCreateDto = new UserCreateDto();
         testCreateDto.setLogin("testLogin");
@@ -108,20 +111,20 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("getAll: получение списка пользователей при их наличии в БД")
+    @DisplayName("getUsersFiltered: получение списка пользователей при их наличии в БД")
     void getAll_WhenUsersExist_ShouldReturnListOfUsers() {
-        when(repository.findAll()).thenReturn(List.of(testUser));
+        when(repository.findFiltered(null,null,null)).thenReturn(List.of(testUser));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getAll()).containsExactly(testResponseDto);
+        assertThat(service.getUsersFiltered(null,null,null)).containsExactly(testResponseDto);
     }
 
     @Test
-    @DisplayName("getAll: получение пустого списка, если пользователи в БД отсутствуют")
+    @DisplayName("getUsersFiltered: получение пустого списка, если пользователи в БД отсутствуют")
     void getAll_WhenNoUsersExist_ShouldReturnEmptyList() {
-        when(repository.findAll()).thenReturn(Collections.emptyList());
+        when(repository.findFiltered(any(),any(),any())).thenReturn(Collections.emptyList());
 
-        assertThat(service.getAll()).isEmpty();
+        assertThat(service.getUsersFiltered(any(),any(),any())).isEmpty();
     }
 
     @Test
@@ -143,32 +146,42 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("getByActive: получение списка активных пользователей")
-    void getByActive_WhenActiveUsersExist_ShouldReturnListOfUsers() {
+    @DisplayName("getUsersFiltered: получение списка активных пользователей")
+    void getUsersFiltered_WhenActiveUsersExist_ShouldReturnListOfUsers() {
         testUser.setActive(true);
-        when(repository.findByIsActive(true)).thenReturn(List.of(testUser));
+        when(repository.findFiltered(true,null,null)).thenReturn(List.of(testUser));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getByActive(true)).containsExactly(testResponseDto);
+        assertThat(service.getUsersFiltered(true,null,null)).containsExactly(testResponseDto);
     }
 
     @Test
-    @DisplayName("getByActive: получение списка неактивных пользователей")
-    void getByActive_WhenNotActiveUsersExist_ShouldReturnListOfUsers() {
+    @DisplayName("getUsersFiltered: получение списка неактивных пользователей")
+    void getUsersFiltered_WhenNotActiveUsersExist_ShouldReturnListOfUsers() {
         testUser.setActive(false);
         testResponseDto.setActive(false);
-        when(repository.findByIsActive(false)).thenReturn(List.of(testUser));
+        when(repository.findFiltered(false,null,null)).thenReturn(List.of(testUser));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getByActive(false)).containsExactly(testResponseDto);
+        assertThat(service.getUsersFiltered(false,null,null)).containsExactly(testResponseDto);
     }
 
     @Test
-    @DisplayName("getByActive: получение пустого списка, если активные пользователи в БД отсутствуют")
-    void getByActive_WhenNoUsersExist_ShouldReturnEmptyList() {
-        when(repository.findByIsActive(true)).thenReturn(Collections.emptyList());
+    @DisplayName("getUsersFiltered: получение пустого списка, если пользователи в БД отсутствуют")
+    void getUsersFiltered_WhenNoUsersExist_ShouldReturnEmptyList() {
+        when(repository.findFiltered(null,null,null)).thenReturn(Collections.emptyList());
 
-        assertThat(service.getByActive(true)).isEmpty();
+        assertThat(service.getUsersFiltered(null,null,null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("getUsersFiltered: получение списка пользователей по должности")
+    void getUsersFiltered_WhenUsersByPositionExist_ShouldReturnListOfUsers() {
+        testResponseDto.setPosition(UserPosition.CHEMIST_ANALYST);
+        when(repository.findFiltered(null,null,UserPosition.CHEMIST_ANALYST)).thenReturn(List.of(testUser));
+        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
+
+        assertThat(service.getUsersFiltered(null,null,UserPosition.CHEMIST_ANALYST)).containsExactly(testResponseDto);
     }
 
     @Test
@@ -192,57 +205,6 @@ class UserServiceImplTest {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.changeStatus(1L, false))
-                .isInstanceOf(NotFoundException.class);
-
-        verify(repository, never()).save(any(User.class));
-    }
-
-    @Test
-    @DisplayName("changeLogin: обновление логина существующего пользователя")
-    void changeLogin_WhenUserExists_ShouldChangeLoginAndReturnUser() {
-        testResponseDto.setLogin("newLogin");
-
-        when(repository.findById(1L)).thenReturn(Optional.of(testUser));
-
-        when(repository.save(testUser)).thenReturn(testUser);
-        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
-
-        service.changeLogin(1L, "newLogin");
-
-        assertThat(testUser.getLogin()).isEqualTo("newLogin");
-    }
-
-    @Test
-    @DisplayName("changeLogin: выброс ConflictException при попытке сменить уже занятый логин")
-    void changeLogin_WhenNewLoginIsTaken_ShouldThrowConflictException() {
-        when(repository.findById(1L)).thenReturn(Optional.of(testUser));
-
-        when(repository.existsByLogin("newLogin")).thenReturn(true);
-
-        assertThatThrownBy(() -> service.changeLogin(1L, "newLogin"))
-                .isInstanceOf(ConflictException.class);
-
-        verify(repository, never()).save(any(User.class));
-
-        assertThat(testUser.getLogin()).isEqualTo("testLogin");
-    }
-
-    @Test
-    @DisplayName("changeLogin: логин не обновляется при подаче того же логина")
-    void changeLogin_WhenLoginUnchanged_ShouldNotCheckUniqueness() {
-        when(repository.findById(1L)).thenReturn(Optional.of(testUser));
-
-        service.changeLogin(1L, testUser.getLogin());
-
-        verify(repository, never()).existsByLogin(anyString());
-    }
-
-    @Test
-    @DisplayName("changeLogin: выброс NotFoundException при попытке сменить логин несуществующего пользователя")
-    void changeLogin_WhenUserDoesNotExists_ShouldThrowNotFoundException() {
-        when(repository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.changeLogin(1L, "newLogin"))
                 .isInstanceOf(NotFoundException.class);
 
         verify(repository, never()).save(any(User.class));
@@ -273,32 +235,6 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("changeRole: обновление роли существующего пользователя")
-    void changeRole_WhenUserExists_ShouldChangeRoleAndReturnUser() {
-        testResponseDto.setRole(UserRole.VIEWER);
-
-        when(repository.findById(1L)).thenReturn(Optional.of(testUser));
-
-        when(repository.save(testUser)).thenReturn(testUser);
-        when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
-
-        service.changeRole(1L, UserRole.VIEWER);
-
-        assertThat(testUser.getRole()).isEqualTo(UserRole.VIEWER);
-    }
-
-    @Test
-    @DisplayName("changeRole: выброс NotFoundException при попытке сменить роль несуществующего пользователя")
-    void changeRole_WhenUserDoesNotExists_ShouldThrowNotFoundException() {
-        when(repository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.changeRole(1L, UserRole.VIEWER))
-                .isInstanceOf(NotFoundException.class);
-
-        verify(repository, never()).save(any(User.class));
-    }
-
-    @Test
     @DisplayName("updateProfile: обновление профиля существующего пользователя")
     void updateProfile_WhenUserExists_ShouldUpdateProfileAndReturnUser() {
         when(repository.findById(1L)).thenReturn(Optional.of(testUser));
@@ -306,12 +242,14 @@ class UserServiceImplTest {
             testUser.setFirstName("Олег");
             testUser.setLastName("Холмов");
             testUser.setMiddleName("Викторович");
+            testUser.setRole(UserRole.ADMIN);
+            testUser.setPosition(UserPosition.SENIOR_CHEMIST_ANALYST);
             return testUser;
         });
         when(repository.save(testUser)).thenReturn(testUser);
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-       service.updateProfile(1L, testUpdateDto);
+        service.updateProfile(1L, testUpdateDto);
 
         assertThat(testUser.getFirstName()).isEqualTo("Олег");
         assertThat(testUser.getLastName()).isEqualTo("Холмов");

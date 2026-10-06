@@ -1,5 +1,6 @@
 package io.github.deanmave.hplclims.domain.dto.response;
 
+import io.github.deanmave.hplclims.domain.UserPosition;
 import io.github.deanmave.hplclims.domain.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,5 +16,6 @@ public class UserResponseDto {
     private String middleName;
     private String login;
     private UserRole role;
+    private UserPosition position;
     private boolean isActive;
 }

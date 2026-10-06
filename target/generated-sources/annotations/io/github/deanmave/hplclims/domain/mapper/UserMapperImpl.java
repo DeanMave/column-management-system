@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-09-28T20:20:25+0300",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.7 (Amazon.com Inc.)"
+    date = "2026-10-09T18:08:27+0300",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.12.1 (Amazon.com Inc.)"
 )
 @Component
 public class UserMapperImpl implements UserMapper {
@@ -30,6 +30,7 @@ public class UserMapperImpl implements UserMapper {
         userResponseDto.setMiddleName( user.getMiddleName() );
         userResponseDto.setLogin( user.getLogin() );
         userResponseDto.setRole( user.getRole() );
+        userResponseDto.setPosition( user.getPosition() );
         userResponseDto.setActive( user.isActive() );
 
         return userResponseDto;
@@ -65,6 +66,7 @@ public class UserMapperImpl implements UserMapper {
         user.setLogin( dto.getLogin() );
         user.setPassword( dto.getPassword() );
         user.setRole( dto.getRole() );
+        user.setPosition( dto.getPosition() );
 
         return user;
     }
@@ -83,6 +85,15 @@ public class UserMapperImpl implements UserMapper {
         }
         if ( dto.getMiddleName() != null ) {
             user.setMiddleName( dto.getMiddleName() );
+        }
+        if ( dto.getLogin() != null ) {
+            user.setLogin( dto.getLogin() );
+        }
+        if ( dto.getRole() != null ) {
+            user.setRole( dto.getRole() );
+        }
+        if ( dto.getPosition() != null ) {
+            user.setPosition( dto.getPosition() );
         }
 
         return user;

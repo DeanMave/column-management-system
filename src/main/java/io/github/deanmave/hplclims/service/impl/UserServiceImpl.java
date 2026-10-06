@@ -1,6 +1,7 @@
 package io.github.deanmave.hplclims.service.impl;
 
 import io.github.deanmave.hplclims.domain.User;
+import io.github.deanmave.hplclims.domain.UserPosition;
 import io.github.deanmave.hplclims.domain.UserRole;
 import io.github.deanmave.hplclims.domain.dto.request.UserCreateDto;
 import io.github.deanmave.hplclims.domain.dto.request.UserUpdateDto;
@@ -8,6 +9,7 @@ import io.github.deanmave.hplclims.domain.dto.response.UserResponseDto;
 import io.github.deanmave.hplclims.domain.mapper.UserMapper;
 import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
+import io.github.deanmave.hplclims.repository.UsageLogRepository;
 import io.github.deanmave.hplclims.repository.UserRepository;
 import io.github.deanmave.hplclims.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
     private final UserRepository repository;
     private final UserMapper mapper;
+    private final UsageLogRepository logRepository;
 
     @Override
     @Transactional
@@ -39,20 +42,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponseDto> getAll() {
-        log.info("Запрос на получение всех пользователей");
-        return repository.findAll().stream()
+    public List<UserResponseDto> getUsersFiltered(Boolean status, UserRole role, UserPosition position) {
+        log.info("Запрос на получение пользователей: status={}, role={}, position={}", status, role, position);
+        return repository.findFiltered(status, role, position).stream()
                 .map(mapper::toUserResponseDto)
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<UserResponseDto> getByActive(boolean status) {
-        log.info("Запрос на получение пользователей по статусу активности");
-        return repository.findByIsActive(status).stream()
-                .map(mapper::toUserResponseDto)
-                .collect(Collectors.toList());
-    }
 
     @Override
     public UserResponseDto getById(Long id) {
@@ -79,7 +75,7 @@ public class UserServiceImpl implements UserService {
         log.info("Попытка обновления профиля пользователя с ID: {}", id);
         User existingUser = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + id + " не найден"));
-        User updatedUser = repository.save(mapper.updateFromDto(existingUser,userDto));
+        User updatedUser = repository.save(mapper.updateFromDto(existingUser, userDto));
         log.info("Профиль пользователя обновлена: {}", updatedUser);
         return mapper.toUserResponseDto(updatedUser);
     }
@@ -98,30 +94,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponseDto changeLogin(Long id, String newLogin) {
-        log.info("Попытка смены логина у пользователя с ID: {}", id);
-        User existingUser = repository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + id + " не найден"));
-        if (!existingUser.getLogin().equals(newLogin)
-            && repository.existsByLogin(newLogin)) {
-            throw new ConflictException("login уже занят: " + newLogin);
+    public void forceDeleteById(Long id) {
+        log.info("Попытка удаления пользователя по ID: {}", id);
+        if (!repository.existsById(id)) {
+            throw new NotFoundException("Пользователь с ID " + id + " не найден");
         }
-        existingUser.setLogin(newLogin);
-        User updatedUser = repository.save(existingUser);
-        log.info("Логин пользователя обновлен: {}", updatedUser);
-        return mapper.toUserResponseDto(updatedUser);
+        if (logRepository.existsByUser_Id(id)) {
+            throw new ConflictException("Нельзя удалить пользователя имеющего записи лога");
+        }
+        repository.deleteById(id);
+        log.info("Пользователь с ID {} удален", id);
     }
 
     @Override
     @Transactional
-    public UserResponseDto changeRole(Long id, UserRole newRole) {
-        log.info("Попытка смены роли у пользователя с ID: {}", id);
-        User existingUser = repository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + id + " не найден"));
-        existingUser.setRole(newRole);
-        User updatedUser = repository.save(existingUser);
-        log.info("Роль пользователя обновлена: {}", updatedUser);
-        return mapper.toUserResponseDto(updatedUser);
+    public void softDeleteById(Long id) {
+        log.info("Попытка деактивации пользователя по ID: {}", id);
+        if (!repository.existsById(id)) {
+            throw new NotFoundException("Пользователь с ID " + id + " не найден");
+        }
+        changeStatus(id, false);
+        log.info("Пользователь с ID {} деактивирован", id);
     }
-
 }

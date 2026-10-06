@@ -30,7 +30,8 @@ last_name VARCHAR(100) NOT NULL,
 middle_name VARCHAR(100) NULL,
 login VARCHAR(50) NOT NULL UNIQUE,
 password VARCHAR(100) NOT NULL,
-role VARCHAR(20) NOT NULL,
+role VARCHAR(20) NOT NULL, -- Роль пользователя
+position VARCHAR(100) NOT NULL, -- Должность сотрудника организации
 is_active BOOLEAN NOT NULL DEFAULT TRUE -- Статус пользователя: АКТИВЕН, НЕАКТИВЕН
 );
 
