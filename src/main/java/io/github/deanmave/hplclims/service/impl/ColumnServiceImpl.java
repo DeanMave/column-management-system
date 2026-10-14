@@ -7,6 +7,7 @@ import io.github.deanmave.hplclims.domain.dto.request.ColumnUpdateDto;
 import io.github.deanmave.hplclims.domain.dto.response.ColumnResponseDto;
 import io.github.deanmave.hplclims.domain.mapper.HplcColumnMapper;
 import io.github.deanmave.hplclims.exception.NotFoundException;
+import io.github.deanmave.hplclims.exception.ValidationException;
 import io.github.deanmave.hplclims.repository.ColumnRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
 import lombok.RequiredArgsConstructor;
@@ -71,23 +72,32 @@ public class ColumnServiceImpl implements ColumnService {
     @Override
     @Transactional
     public ColumnResponseDto changeStatus(Long id, ColumnStatus newStatus) {
-        log.info("Попытка обновления колонки с ID: {}", id);
+        log.info("Попытка смены статуса колонки с ID: {}", id);
         HplcColumn existingColumn = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
+        if (existingColumn.getStatus()==ColumnStatus.IN_USE){
+            throw new ValidationException("Нельзя изменить статус колонки, которая находится в работе");
+        }
+        if (newStatus == ColumnStatus.DISCARDED && existingColumn.isExternal()) {
+            throw new ValidationException("Статус выбыл можно устанавливать только на внутренние колонки");
+        }
+        if (newStatus == ColumnStatus.RETURNED && !existingColumn.isExternal()) {
+            throw new ValidationException("Статус возвращен можно устанавливать только на внешние колонки");
+        }
         existingColumn.setStatus(newStatus);
         HplcColumn updatedColumn = repository.save(existingColumn);
-        log.info("Колонка обновлена: {}", updatedColumn);
+        log.info("Статус колонки обновлен: {}", updatedColumn);
         return mapper.toColumnResponseDto(updatedColumn);
     }
 
     @Override
     @Transactional
     public ColumnResponseDto correctData(Long id, ColumnUpdateDto updateDto) {
-        log.info("Попытка обновления колонки с ID: {}", id);
+        log.info("Попытка коррекции данных колонки с ID: {}", id);
         HplcColumn existingColumn = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
-        HplcColumn updatedColumn = repository.save(mapper.updateFromDto(existingColumn,updateDto));
-        log.info("Колонка обновлена: {}", updatedColumn);
+        HplcColumn updatedColumn = repository.save(mapper.updateFromDto(existingColumn, updateDto));
+        log.info("Данные колонки обновлены: {}", updatedColumn);
         return mapper.toColumnResponseDto(updatedColumn);
     }
 
