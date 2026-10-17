@@ -13,4 +13,6 @@ public interface UsageLogRepository extends JpaRepository<ColumnUsageLog,Long> {
     List<ColumnUsageLog> findByEndDateIsNull();
 
     boolean existsByUser_Id(Long userId);
+
+    boolean existsByHplcColumn_Id(Long columnId);
 }

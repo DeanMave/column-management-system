@@ -6,9 +6,11 @@ import io.github.deanmave.hplclims.domain.dto.request.ColumnCreateDto;
 import io.github.deanmave.hplclims.domain.dto.request.ColumnUpdateDto;
 import io.github.deanmave.hplclims.domain.dto.response.ColumnResponseDto;
 import io.github.deanmave.hplclims.domain.mapper.HplcColumnMapper;
+import io.github.deanmave.hplclims.exception.ConflictException;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.exception.ValidationException;
 import io.github.deanmave.hplclims.repository.ColumnRepository;
+import io.github.deanmave.hplclims.repository.UsageLogRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ public class ColumnServiceImpl implements ColumnService {
     private static final String EXT_PREFIX = "EXT";
 
     private final ColumnRepository repository;
+    private final UsageLogRepository usageLogRepository;
     private final HplcColumnMapper mapper;
 
 
@@ -65,6 +68,9 @@ public class ColumnServiceImpl implements ColumnService {
         if (!repository.existsById(id)) {
             throw new NotFoundException("Колонка с ID " + id + " не найдена");
         }
+        if (usageLogRepository.existsByHplcColumn_Id(id)) {
+            throw new ConflictException("Нельзя удалить колонку, имеющую записи лога");
+        }
         repository.deleteById(id);
         log.info("Колонка с ID {} удалена", id);
     }
@@ -75,7 +81,7 @@ public class ColumnServiceImpl implements ColumnService {
         log.info("Попытка смены статуса колонки с ID: {}", id);
         HplcColumn existingColumn = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
-        if (existingColumn.getStatus()==ColumnStatus.IN_USE){
+        if (existingColumn.getStatus() == ColumnStatus.IN_USE) {
             throw new ValidationException("Нельзя изменить статус колонки, которая находится в работе");
         }
         if (newStatus == ColumnStatus.DISCARDED && existingColumn.isExternal()) {

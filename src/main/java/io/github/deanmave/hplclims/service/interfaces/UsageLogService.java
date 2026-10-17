@@ -1,6 +1,5 @@
 package io.github.deanmave.hplclims.service.interfaces;
 
-import io.github.deanmave.hplclims.domain.ColumnUsageLog;
 import io.github.deanmave.hplclims.domain.dto.request.EndUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.request.StartUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.request.CorrectUsageLogRequest;
