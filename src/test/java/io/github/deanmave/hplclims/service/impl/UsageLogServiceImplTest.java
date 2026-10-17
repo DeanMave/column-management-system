@@ -6,6 +6,7 @@ import io.github.deanmave.hplclims.domain.HplcColumn;
 import io.github.deanmave.hplclims.domain.User;
 import io.github.deanmave.hplclims.domain.dto.request.CorrectUsageLogRequest;
 import io.github.deanmave.hplclims.domain.dto.request.EndUsageRequest;
+import io.github.deanmave.hplclims.domain.dto.request.RejectUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.request.StartUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.response.UsageLogResponseDto;
 import io.github.deanmave.hplclims.domain.mapper.ColumnUsageLogMapper;
@@ -126,19 +127,6 @@ class UsageLogServiceImplTest {
         }
 
         @Test
-        @DisplayName("выброс ValidationException, если не заполнены обязательные поля запроса")
-        void whenRequestFieldsAreBlank_ShouldThrowValidationException() {
-            request.setTaskNumber("");
-            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(columnRepository.findById(1L)).thenReturn(Optional.of(testColumn));
-
-            assertThatThrownBy(() -> service.startUsage(1L, 1L, request))
-                    .isInstanceOf(ValidationException.class);
-
-            verify(repository, never()).save(any());
-        }
-
-        @Test
         @DisplayName("успешное создание лога и смена статуса колонки в IN_USE")
         void whenDataIsValid_ShouldCreateLogAndSetColumnInUse() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
@@ -255,11 +243,16 @@ class UsageLogServiceImplTest {
     @Nested
     @DisplayName("rejectUsage: отказ от колонки")
     class RejectUsage {
+        private RejectUsageRequest request;
         private ColumnUsageLog existingLog;
         private final String rejectReason = "Причина отказа";
 
         @BeforeEach
         void setRejectUsage() {
+            request = new RejectUsageRequest();
+            request.setReason(rejectReason);
+            request.setDate(LocalDate.now());
+
             existingLog = new ColumnUsageLog();
             existingLog.setId(10L);
             existingLog.setUser(testUser);
@@ -272,7 +265,7 @@ class UsageLogServiceImplTest {
         void whenLogNotFound_ShouldThrowNotFoundException() {
             when(repository.findById(10L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.rejectUsage(10L, rejectReason, LocalDate.now()))
+            assertThatThrownBy(() -> service.rejectUsage(10L, request))
                     .isInstanceOf(NotFoundException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -285,7 +278,7 @@ class UsageLogServiceImplTest {
             existingLog.setEndDate(LocalDate.now().minusDays(1));
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
 
-            assertThatThrownBy(() -> service.rejectUsage(10L, rejectReason, LocalDate.now()))
+            assertThatThrownBy(() -> service.rejectUsage(10L, request))
                     .isInstanceOf(ConflictException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -295,9 +288,10 @@ class UsageLogServiceImplTest {
         @Test
         @DisplayName("выброс ValidationException, если дата отказа раньше даты начала")
         void whenRejectionDateBeforeStartDate_ShouldThrowValidationException() {
+            request.setDate(LocalDate.now().minusDays(6));
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
 
-            assertThatThrownBy(() -> service.rejectUsage(10L, rejectReason, LocalDate.now().minusDays(4)))
+            assertThatThrownBy(() -> service.rejectUsage(10L, request))
                     .isInstanceOf(ValidationException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -307,9 +301,10 @@ class UsageLogServiceImplTest {
         @Test
         @DisplayName("выброс ValidationException, если дата отказа позже сегодняшней даты")
         void whenRejectionDateInFuture_ShouldThrowValidationException() {
+            request.setDate(LocalDate.now().plusDays(2));
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
 
-            assertThatThrownBy(() -> service.rejectUsage(10L, rejectReason, LocalDate.now().plusDays(2)))
+            assertThatThrownBy(() -> service.rejectUsage(10L, request))
                     .isInstanceOf(ValidationException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -323,7 +318,7 @@ class UsageLogServiceImplTest {
             when(repository.save(existingLog)).thenReturn(existingLog);
             when(mapper.toUsageLogResponseDto(existingLog)).thenReturn(testResponseDto);
 
-            UsageLogResponseDto result = service.rejectUsage(10L, rejectReason, LocalDate.now());
+            UsageLogResponseDto result = service.rejectUsage(10L, request);
 
             assertThat(result).isEqualTo(testResponseDto);
 
@@ -397,7 +392,7 @@ class UsageLogServiceImplTest {
         @DisplayName("успешное корректировка неактивного лога")
         void whenDataIsValidAndLogWasNotActive_ShouldCorrect() {
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
-            when(mapper.updateFromDto(existingLog,request)).thenAnswer(invocation->{
+            when(mapper.updateFromDto(existingLog, request)).thenAnswer(invocation -> {
                 existingLog.setTaskNumber("2780ДК");
                 existingLog.setDrugName("Валидол");
                 existingLog.setAnalysisParameters("Канал А - 90% H2O; C - 10% ACN");
