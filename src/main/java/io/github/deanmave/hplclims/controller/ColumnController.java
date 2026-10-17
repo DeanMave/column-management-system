@@ -30,24 +30,24 @@ public class ColumnController {
     }
 
     @GetMapping("/{columnId}")
-    public ColumnResponseDto getById(@PathVariable long columnId) {
+    public ColumnResponseDto getById(@PathVariable Long columnId) {
         return service.getById(columnId);
     }
 
     @DeleteMapping("/{columnId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteById(@PathVariable long columnId) {
+    public void deleteById(@PathVariable Long columnId) {
         service.deleteById(columnId);
     }
 
     @PatchMapping("/{columnId}/status")
-    public ColumnResponseDto changeStatus(@PathVariable long columnId,
+    public ColumnResponseDto changeStatus(@PathVariable Long columnId,
                                           @RequestParam ColumnStatus status) {
         return service.changeStatus(columnId, status);
     }
 
     @PatchMapping("/{columnId}")
-    public ColumnResponseDto updateColumn(@PathVariable long columnId,
+    public ColumnResponseDto updateColumn(@PathVariable Long columnId,
                                           @Valid @RequestBody ColumnUpdateDto updateDto) {
         return service.correctData(columnId, updateDto);
     }

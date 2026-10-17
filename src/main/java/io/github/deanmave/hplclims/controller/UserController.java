@@ -27,18 +27,18 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public UserResponseDto getUserById(@PathVariable long userId) {
+    public UserResponseDto getUserById(@PathVariable Long userId) {
         return service.getById(userId);
     }
 
     @PatchMapping("/{userId}/status")
-    public UserResponseDto changeStatus(@PathVariable long userId,
+    public UserResponseDto changeStatus(@PathVariable Long userId,
                                         @RequestParam boolean status) {
         return service.changeStatus(userId, status);
     }
 
     @PatchMapping("/{userId}/password")
-    public UserResponseDto changePassword(@PathVariable long userId,
+    public UserResponseDto changePassword(@PathVariable Long userId,
                                           @RequestBody String password) {
         return service.changePassword(userId, password);
     }
@@ -50,20 +50,20 @@ public class UserController {
     }
 
     @PatchMapping("/{userId}")
-    public UserResponseDto updateProfile(@PathVariable long userId,
+    public UserResponseDto updateProfile(@PathVariable Long userId,
                                          @Valid @RequestBody UserUpdateDto updateDto) {
         return service.updateProfile(userId, updateDto);
     }
 
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void forceDeleteById(@PathVariable long userId) {
+    public void forceDeleteById(@PathVariable Long userId) {
         service.forceDeleteById(userId);
     }
 
     @PatchMapping("/{userId}/deactivate")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void softDeleteById(@PathVariable long userId) {
+    public void softDeleteById(@PathVariable Long userId) {
         service.softDeleteById(userId);
     }
 }
