@@ -1,26 +1,27 @@
 package io.github.deanmave.hplclims.service.interfaces;
 
-import io.github.deanmave.hplclims.domain.User;
+import io.github.deanmave.hplclims.domain.UserPosition;
 import io.github.deanmave.hplclims.domain.UserRole;
+import io.github.deanmave.hplclims.domain.dto.request.UserCreateDto;
+import io.github.deanmave.hplclims.domain.dto.request.UserUpdateDto;
+import io.github.deanmave.hplclims.domain.dto.response.UserResponseDto;
 
 import java.util.List;
 
 public interface UserService {
-    User create(User user);
+    UserResponseDto create(UserCreateDto userDto);
 
-    List<User> getAll();
+    List<UserResponseDto> getUsersFiltered(Boolean status, UserRole role, UserPosition position);
 
-    List<User> getByActive(boolean status);
+    UserResponseDto getById(Long id);
 
-    User getById(Long id);
+    UserResponseDto changeStatus(Long id, boolean newStatus);
 
-    User changeStatus(Long id, boolean newStatus);
+    UserResponseDto updateProfile(Long id, UserUpdateDto userDto);
 
-    User updateProfile(Long id, User newUser);
+    UserResponseDto changePassword(Long id, String newPassword);
 
-    User changePassword(Long id, String newPassword);
+    void forceDeleteById(Long id);
 
-    User changeLogin(Long id, String newLogin);
-
-    User changeRole(Long id, UserRole newRole);
+    void softDeleteById(Long id);
 }

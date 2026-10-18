@@ -2,10 +2,15 @@ package io.github.deanmave.hplclims.service.impl;
 
 import io.github.deanmave.hplclims.domain.ColumnStatus;
 import io.github.deanmave.hplclims.domain.HplcColumn;
-import io.github.deanmave.hplclims.exception.ConflictException;
+import io.github.deanmave.hplclims.domain.dto.request.ColumnCreateDto;
+import io.github.deanmave.hplclims.domain.dto.request.ColumnUpdateDto;
+import io.github.deanmave.hplclims.domain.dto.response.ColumnResponseDto;
+import io.github.deanmave.hplclims.domain.mapper.HplcColumnMapper;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.repository.ColumnRepository;
+import io.github.deanmave.hplclims.repository.UsageLogRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,18 +30,27 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("Сервис работы с хроматографическими колонками")
 class ColumnServiceImplTest {
 
     @Mock
     private ColumnRepository repository;
 
+    @Mock
+    private HplcColumnMapper mapper;
+
+    @Mock
+    private UsageLogRepository usageLogRepository;
+
     @InjectMocks
     private ColumnServiceImpl service;
 
     private HplcColumn testColumn;
+    private ColumnCreateDto testCreateDto;
+    private ColumnUpdateDto testUpdateDto;
+    private ColumnResponseDto testResponseDto;
 
     @BeforeEach
     void setUp() {
@@ -47,50 +61,95 @@ class ColumnServiceImplTest {
         testColumn.setLength(250);
         testColumn.setDiameter(BigDecimal.valueOf(4.6));
         testColumn.setParticleSize(BigDecimal.valueOf(5));
-        testColumn.setInstallationDate(LocalDate.of(2026, 8, 9));
+        testColumn.setInstallationDate(LocalDate.now());
         testColumn.setPhMin(3.0);
         testColumn.setPhMax(7.0);
         testColumn.setStationaryPhase("C18");
         testColumn.setMaxPressure(400);
+
+        testCreateDto = new ColumnCreateDto();
+        testCreateDto.setManufacturer("Waters");
+        testCreateDto.setSerialNumber("S409123");
+        testCreateDto.setPartNumber("P9130");
+        testCreateDto.setLength(250);
+        testCreateDto.setDiameter(BigDecimal.valueOf(4.6));
+        testCreateDto.setParticleSize(BigDecimal.valueOf(5));
+        testCreateDto.setInstallationDate(LocalDate.now());
+        testCreateDto.setPhMin(3.0);
+        testCreateDto.setPhMax(7.0);
+        testCreateDto.setStationaryPhase("C18");
+        testCreateDto.setMaxPressure(400);
+        testCreateDto.setOwnerOrganization("Альтаир");
+
+        testUpdateDto = new ColumnUpdateDto();
+        testUpdateDto.setSerialNumber("S444821");
+        testUpdateDto.setPartNumber("F6489");
+        testUpdateDto.setLength(150);
+        testUpdateDto.setDiameter(BigDecimal.valueOf(4.0));
+
+        testResponseDto = new ColumnResponseDto();
+        testResponseDto.setManufacturer("Waters");
+        testResponseDto.setSerialNumber("S409123");
+        testResponseDto.setPartNumber("P9130");
+        testResponseDto.setLength(250);
+        testResponseDto.setDiameter(BigDecimal.valueOf(4.6));
+        testResponseDto.setParticleSize(BigDecimal.valueOf(5));
+        testResponseDto.setInstallationDate(LocalDate.now());
+        testResponseDto.setPhMin(3.0);
+        testResponseDto.setPhMax(7.0);
+        testResponseDto.setStationaryPhase("C18");
+        testResponseDto.setMaxPressure(400);
+    }
+
+    @Test
+    @DisplayName("create: создание внутренней колонки — генерация кода INT-YYYY-XXX")
+    void create_whenColumnIsInternal_shouldGenerateIntCode() {
+        testColumn.setOwnerOrganization(null);
+
+        int currentYear = LocalDate.now().getYear();
+        String expectedCode = String.format("INT-%d-001", currentYear);
+
+        when(mapper.toHplcColumn(testCreateDto)).thenReturn(testColumn);
+        when(repository.getNextIntSequenceValue()).thenReturn(1L);
+        when(repository.save(testColumn)).thenReturn(testColumn);
+        when(mapper.toColumnResponseDto(testColumn)).thenReturn(testResponseDto);
+
+        service.create(testCreateDto);
+
+        assertThat(testColumn.getInternalCode()).isEqualTo(expectedCode);
+        verify(repository).getNextIntSequenceValue();
+    }
+
+    @Test
+    @DisplayName("create: создание внешней колонки — генерация кода EXT-YYYY-XXX")
+    void create_whenColumnIsExternal_shouldGenerateExtCode() {
         testColumn.setOwnerOrganization("Альтаир");
-        testColumn.setInternalCode("WATERS-2026-001");
+
+        int currentYear = LocalDate.now().getYear();
+        String expectedCode = String.format("EXT-%d-001", currentYear);
+
+        when(mapper.toHplcColumn(testCreateDto)).thenReturn(testColumn);
+        when(repository.getNextExtSequenceValue()).thenReturn(1L);
+        when(repository.save(testColumn)).thenReturn(testColumn);
+        when(mapper.toColumnResponseDto(testColumn)).thenReturn(testResponseDto);
+
+        service.create(testCreateDto);
+
+        assertThat(testColumn.getInternalCode()).isEqualTo(expectedCode);
+        verify(repository).getNextExtSequenceValue();
     }
 
     @Test
-    void create_whenInternalCodeIsUnique_shouldSaveAndReturnColumn() {
-        testColumn.setStatus(ColumnStatus.RETURNED);
-        when(repository.existsByInternalCode(testColumn.getInternalCode())).thenReturn(false);
-
-        HplcColumn savedColumnDb = new HplcColumn();
-        savedColumnDb.setId(1L);
-        savedColumnDb.setInternalCode(testColumn.getInternalCode());
-        when(repository.save(testColumn)).thenReturn(savedColumnDb);
-
-        HplcColumn result = service.create(testColumn);
-
-        assertThat(result).isEqualTo(savedColumnDb);
-        assertThat(testColumn.getStatus()).isEqualTo(ColumnStatus.AVAILABLE);
-        verify(repository).save(testColumn);
-    }
-
-    @Test
-    void create_whenInternalCodeAlreadyExists_shouldThrowConflictException() {
-        when(repository.existsByInternalCode(testColumn.getInternalCode())).thenReturn(true);
-
-        assertThatThrownBy(() -> service.create(testColumn)).isInstanceOf(ConflictException.class)
-                .hasMessageContaining(testColumn.getInternalCode());
-
-        verify(repository, never()).save(any(HplcColumn.class));
-    }
-
-    @Test
+    @DisplayName("getAll: получение списка колонок при их наличии в БД")
     void getAll_WhenColumnsExist_ShouldReturnListOfColumns() {
+        when(mapper.toColumnResponseDto(testColumn)).thenReturn(testResponseDto);
         when(repository.findAll()).thenReturn(List.of(testColumn));
 
-        assertThat(service.getAll()).containsExactly(testColumn);
+        assertThat(service.getAll()).containsExactly(testResponseDto);
     }
 
     @Test
+    @DisplayName("getAll: получение пустого списка, если колонки в БД отсутствуют")
     void getAll_WhenNoColumnsExist_ShouldReturnEmptyList() {
         when(repository.findAll()).thenReturn(Collections.emptyList());
 
@@ -98,13 +157,16 @@ class ColumnServiceImplTest {
     }
 
     @Test
+    @DisplayName("getById: получение колонки по существующему ID")
     void getById_WhenColumnExists_ShouldReturnColumn() {
+        when(mapper.toColumnResponseDto(testColumn)).thenReturn(testResponseDto);
         when(repository.findById(1L)).thenReturn(Optional.of(testColumn));
 
-        assertThat(service.getById(1L)).isEqualTo(testColumn);
+        assertThat(service.getById(1L)).isEqualTo(testResponseDto);
     }
 
     @Test
+    @DisplayName("getById: выброс NotFoundException при поиске несуществующего ID")
     void getById_WhenColumnDoesNotExist_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
@@ -112,8 +174,10 @@ class ColumnServiceImplTest {
     }
 
     @Test
+    @DisplayName("deleteById: успешное удаление колонки по существующему ID")
     void deleteById_WhenColumnExists_ShouldDeleteSuccessfully() {
         when(repository.existsById(1L)).thenReturn(true);
+        when(usageLogRepository.existsByHplcColumn_Id(1L)).thenReturn(false);
 
         service.deleteById(1L);
 
@@ -121,6 +185,7 @@ class ColumnServiceImplTest {
     }
 
     @Test
+    @DisplayName("deleteById: выброс NotFoundException при попытке удалить несуществующую колонку")
     void deleteById_WhenColumnDoesNotExist_ShouldThrowNotFoundException() {
         when(repository.existsById(1L)).thenReturn(false);
 
@@ -130,21 +195,22 @@ class ColumnServiceImplTest {
     }
 
     @Test
+    @DisplayName("changeStatus: обновление статуса существующей колонки")
     void changeStatus_WhenColumnExists_ShouldUpdateStatusAndReturnColumn() {
+        testResponseDto.setStatus(ColumnStatus.IN_USE);
+
+        when(mapper.toColumnResponseDto(testColumn)).thenReturn(testResponseDto);
         when(repository.findById(1L)).thenReturn(Optional.of(testColumn));
+        when(repository.save(testColumn)).thenReturn(testColumn);
+        when(mapper.toColumnResponseDto(testColumn)).thenReturn(testResponseDto);
 
-        HplcColumn savedColumnDb = new HplcColumn();
-        savedColumnDb.setId(1L);
-        savedColumnDb.setStatus(ColumnStatus.IN_USE);
-        when(repository.save(testColumn)).thenReturn(savedColumnDb);
+        service.changeStatus(1L, ColumnStatus.IN_USE);
 
-        HplcColumn result = service.changeStatus(1L, ColumnStatus.IN_USE);
-
-        assertThat(result).isEqualTo(savedColumnDb);
         assertThat(testColumn.getStatus()).isEqualTo(ColumnStatus.IN_USE);
     }
 
     @Test
+    @DisplayName("changeStatus: выброс NotFoundException при попытке сменить статус несуществующей колонки")
     void changeStatus_WhenColumnDoesNotExist_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
@@ -154,66 +220,35 @@ class ColumnServiceImplTest {
     }
 
     @Test
+    @DisplayName("correctData: успешная корректировка полей колонки")
     void correctData_WhenColumnExists_ShouldUpdateFieldsAndReturnColumn() {
         when(repository.findById(1L)).thenReturn(Optional.of(testColumn));
+        when(mapper.updateFromDto(testColumn, testUpdateDto)).thenAnswer(invocation -> {
+            testColumn.setPartNumber("F6489");
+            testColumn.setSerialNumber("S444821");
+            testColumn.setLength(150);
+            testColumn.setDiameter(BigDecimal.valueOf(4.0));
+            return testColumn;
+        });
+        when(repository.save(testColumn)).thenReturn(testColumn);
+        when(mapper.toColumnResponseDto(testColumn)).thenReturn(testResponseDto);
 
-        HplcColumn newData = new HplcColumn();
-        newData.setManufacturer("Zorbax");
-        newData.setSerialNumber("H1235");
-        newData.setPartNumber("Z3131");
-        newData.setStationaryPhase("C12");
-        newData.setInternalCode(testColumn.getInternalCode());
+        service.correctData(1L, testUpdateDto);
 
-        HplcColumn savedColumnDb = new HplcColumn();
-        savedColumnDb.setId(1L);
-
-        when(repository.save(testColumn)).thenReturn(savedColumnDb);
-
-        HplcColumn result = service.correctData(1L, newData);
-
-        assertThat(result).isEqualTo(savedColumnDb);
-        assertThat(testColumn.getManufacturer()).isEqualTo("Zorbax");
-        assertThat(testColumn.getSerialNumber()).isEqualTo("H1235");
-        assertThat(testColumn.getPartNumber()).isEqualTo("Z3131");
-        assertThat(testColumn.getStationaryPhase()).isEqualTo("C12");
+        assertThat(testColumn.getPartNumber()).isEqualTo("F6489");
+        assertThat(testColumn.getSerialNumber()).isEqualTo("S444821");
+        assertThat(testColumn.getLength()).isEqualTo(150);
+        assertThat(testColumn.getDiameter()).isEqualTo(BigDecimal.valueOf(4.0));
     }
 
     @Test
+    @DisplayName("correctData: выброс NotFoundException при попытке скорректировать несуществующую колонку")
     void correctData_WhenColumnDoesNotExist_ShouldThrowNotFoundException() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.correctData(1L,testColumn))
+        assertThatThrownBy(() -> service.correctData(1L, testUpdateDto))
                 .isInstanceOf(NotFoundException.class);
 
-        verify(repository,never()).save(any(HplcColumn.class));
-    }
-
-    @Test
-    void correctData_WhenNewInternalCodeIsTaken_ShouldThrowConflictException() {
-        when(repository.findById(1L)).thenReturn(Optional.of(testColumn));
-
-        HplcColumn newData = new HplcColumn();
-        newData.setInternalCode("ZORBAX-2026-001");
-
-        when(repository.existsByInternalCode(newData.getInternalCode())).thenReturn(true);
-
-        assertThatThrownBy(() -> service.correctData(1L, newData))
-                .isInstanceOf(ConflictException.class);
-
-        verify(repository,never()).save(any(HplcColumn.class));
-
-        assertThat(testColumn.getManufacturer()).isEqualTo("Waters");
-    }
-
-    @Test
-    void correctData_WhenInternalCodeUnchanged_ShouldNotCheckUniqueness() {
-        when(repository.findById(1L)).thenReturn(Optional.of(testColumn));
-
-        HplcColumn newData = new HplcColumn();
-        newData.setInternalCode(testColumn.getInternalCode());
-
-        service.correctData(1L, newData);
-
-        verify(repository,never()).existsByInternalCode(anyString());
+        verify(repository, never()).save(any(HplcColumn.class));
     }
 }

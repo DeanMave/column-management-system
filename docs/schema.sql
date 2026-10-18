@@ -1,3 +1,6 @@
+CREATE SEQUENCE column_int_code_seq START WITH 1 INCREMENT BY 1; -- Счётчик внутренних колонок организации
+CREATE SEQUENCE column_ext_code_seq START WITH 1 INCREMENT BY 1; -- Счётчик внешних колонок организации
+
 -- Таблица колонок
 CREATE TABLE hplc_column(
 id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -27,7 +30,8 @@ last_name VARCHAR(100) NOT NULL,
 middle_name VARCHAR(100) NULL,
 login VARCHAR(50) NOT NULL UNIQUE,
 password VARCHAR(100) NOT NULL,
-role VARCHAR(20) NOT NULL,
+role VARCHAR(20) NOT NULL, -- Роль пользователя
+position VARCHAR(100) NOT NULL, -- Должность сотрудника организации
 is_active BOOLEAN NOT NULL DEFAULT TRUE -- Статус пользователя: АКТИВЕН, НЕАКТИВЕН
 );
 
