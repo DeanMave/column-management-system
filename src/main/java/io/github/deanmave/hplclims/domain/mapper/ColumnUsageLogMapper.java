@@ -14,8 +14,13 @@ import org.mapstruct.*;
         uses = {UserMapper.class, HplcColumnMapper.class})
 public interface ColumnUsageLogMapper {
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", source = "user")
+    @Mapping(target = "hplcColumn", source = "hplcColumn")
+    @Mapping(target = "taskNumber", source = "request.taskNumber")
+    @Mapping(target = "drugName", source = "request.drugName")
     @Mapping(target = "startDate", ignore = true)
     @Mapping(target = "endDate", ignore = true)
+    @Mapping(target = "rejectionReason", ignore = true)
     ColumnUsageLog toColumnUsageLog(StartUsageRequest request, User user, HplcColumn hplcColumn);
 
     UsageLogResponseDto toUsageLogResponseDto(ColumnUsageLog columnUsageLog);

@@ -40,19 +40,19 @@ public class UsageLogServiceImpl implements UsageLogService {
 
     @Override
     @Transactional
-    public UsageLogResponseDto startUsage(Long userId, Long hplcColumnId, StartUsageRequest request) {
-        log.info("Попытка взять пользователем:{} колонку:{} в работу", userId, hplcColumnId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
+    public UsageLogResponseDto startUsage(StartUsageRequest request) {
+        log.info("Попытка взять пользователем:{} колонку:{} в работу", request.getUserId(), request.getColumnId());
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + request.getUserId() + " не найден"));
         if (!user.isActive()) {
             throw new ValidationException("Только действующие сотрудники могут брать колонку в работу");
         }
-        HplcColumn hplcColumn = columnRepository.findById(hplcColumnId)
-                .orElseThrow(() -> new NotFoundException("Колонка с ID " + hplcColumnId + " не найден"));
+        HplcColumn hplcColumn = columnRepository.findById(request.getColumnId())
+                .orElseThrow(() -> new NotFoundException("Колонка с ID " + request.getColumnId() + " не найден"));
         if (!hplcColumn.isAvailable()) {
-            throw new ConflictException("Колонка с id: " + hplcColumnId + " сейчас занята");
+            throw new ConflictException("Колонка с id: " + hplcColumn.getId() + " сейчас занята");
         }
-        columnService.changeStatus(hplcColumnId, ColumnStatus.IN_USE);
+        columnService.changeStatus(hplcColumn.getId(), ColumnStatus.IN_USE);
         ColumnUsageLog newLog = mapper.toColumnUsageLog(request, user, hplcColumn);
         newLog.setStartDate(LocalDate.now());
         ColumnUsageLog savedLog = repository.save(newLog);

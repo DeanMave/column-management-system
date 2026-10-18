@@ -3,6 +3,7 @@ package io.github.deanmave.hplclims.domain.dto.request;
 import io.github.deanmave.hplclims.domain.UserPosition;
 import io.github.deanmave.hplclims.domain.UserRole;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,8 +22,8 @@ public class UserCreateDto {
     private String login;
     @NotBlank(message = "Пароль не может быть пустым")
     private String password;
-    @NotBlank(message = "Роль сотрудника должна быть выбрана")
+    @NotNull(message = "Роль сотрудника должна быть выбрана")
     private UserRole role;
-    @NotBlank(message = "Должность сотрудника должна быть выбрана")
+    @NotNull(message = "Должность сотрудника должна быть выбрана")
     private UserPosition position;
 }

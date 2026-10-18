@@ -18,10 +18,8 @@ public class UsageLogController {
 
     @PostMapping("/start")
     @ResponseStatus(HttpStatus.CREATED)
-    public UsageLogResponseDto startUsage(@RequestParam Long userId,
-                                          @RequestParam Long columnId,
-                                          @Valid @RequestBody StartUsageRequest request) {
-        return service.startUsage(userId, columnId, request);
+    public UsageLogResponseDto startUsage(@Valid @RequestBody StartUsageRequest request) {
+        return service.startUsage(request);
     }
 
     @PatchMapping("/{logId}/end")

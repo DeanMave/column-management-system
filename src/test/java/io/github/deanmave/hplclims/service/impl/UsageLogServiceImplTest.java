@@ -95,6 +95,8 @@ class UsageLogServiceImplTest {
         @BeforeEach
         void setUpStartUsage() {
             request = new StartUsageRequest();
+            request.setUserId(1L);
+            request.setColumnId(1L);
             request.setTaskNumber("2710ДК");
             request.setDrugName("Фенобарбитал");
         }
@@ -105,7 +107,7 @@ class UsageLogServiceImplTest {
             testUser.setActive(false);
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-            assertThatThrownBy(() -> service.startUsage(1L, 1L, request))
+            assertThatThrownBy(() -> service.startUsage(request))
                     .isInstanceOf(ValidationException.class);
 
             verify(columnService, never()).changeStatus(eq(testColumn.getId()), any());
@@ -119,7 +121,7 @@ class UsageLogServiceImplTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(columnRepository.findById(1L)).thenReturn(Optional.of(testColumn));
 
-            assertThatThrownBy(() -> service.startUsage(1L, 1L, request))
+            assertThatThrownBy(() -> service.startUsage(request))
                     .isInstanceOf(ConflictException.class);
 
             verify(columnService, never()).changeStatus(eq(testColumn.getId()), any());
@@ -135,7 +137,7 @@ class UsageLogServiceImplTest {
             when(repository.save(testLog)).thenReturn(testLog);
             when(mapper.toUsageLogResponseDto(testLog)).thenReturn(testResponseDto);
 
-            UsageLogResponseDto result = service.startUsage(1L, 1L, request);
+            UsageLogResponseDto result = service.startUsage(request);
 
             assertThat(result).isEqualTo(testResponseDto);
             verify(columnService).changeStatus(1L, ColumnStatus.IN_USE);
