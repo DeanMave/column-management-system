@@ -8,6 +8,7 @@ import io.github.deanmave.hplclims.domain.dto.response.ColumnResponseDto;
 import io.github.deanmave.hplclims.domain.mapper.HplcColumnMapper;
 import io.github.deanmave.hplclims.exception.NotFoundException;
 import io.github.deanmave.hplclims.repository.ColumnRepository;
+import io.github.deanmave.hplclims.repository.UsageLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,9 @@ class ColumnServiceImplTest {
 
     @Mock
     private HplcColumnMapper mapper;
+
+    @Mock
+    private UsageLogRepository usageLogRepository;
 
     @InjectMocks
     private ColumnServiceImpl service;
@@ -173,6 +177,7 @@ class ColumnServiceImplTest {
     @DisplayName("deleteById: успешное удаление колонки по существующему ID")
     void deleteById_WhenColumnExists_ShouldDeleteSuccessfully() {
         when(repository.existsById(1L)).thenReturn(true);
+        when(usageLogRepository.existsByHplcColumn_Id(1L)).thenReturn(false);
 
         service.deleteById(1L);
 
