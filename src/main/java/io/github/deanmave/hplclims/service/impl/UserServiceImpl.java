@@ -14,6 +14,7 @@ import io.github.deanmave.hplclims.repository.UserRepository;
 import io.github.deanmave.hplclims.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository repository;
     private final UserMapper mapper;
     private final UsageLogRepository logRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -37,6 +39,7 @@ public class UserServiceImpl implements UserService {
             throw new ConflictException("Пользователь с логином " + userDto.getLogin() + " уже существует.");
         }
         User newUser = repository.save(mapper.toUser(userDto));
+        newUser.setPassword(passwordEncoder.encode(userDto.getPassword()));
         log.info("Пользователь добавлен: {}", newUser);
         return mapper.toUserResponseDto(newUser);
     }
@@ -86,7 +89,7 @@ public class UserServiceImpl implements UserService {
         log.info("Попытка смены пароля у пользователя с ID: {}", id);
         User existingUser = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + id + " не найден"));
-        existingUser.setPassword(newPassword);
+        existingUser.setPassword(passwordEncoder.encode(newPassword));
         User updatedUser = repository.save(existingUser);
         log.info("Пароль пользователя обновлен: {}", updatedUser);
         return mapper.toUserResponseDto(updatedUser);
