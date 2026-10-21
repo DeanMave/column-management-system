@@ -38,10 +38,11 @@ public class UserServiceImpl implements UserService {
         if (repository.existsByLogin(userDto.getLogin())) {
             throw new ConflictException("Пользователь с логином " + userDto.getLogin() + " уже существует.");
         }
-        User newUser = repository.save(mapper.toUser(userDto));
-        newUser.setPassword(passwordEncoder.encode(userDto.getPassword()));
-        log.info("Пользователь добавлен: {}", newUser);
-        return mapper.toUserResponseDto(newUser);
+        User user = mapper.toUser(userDto);
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        User savedUser = repository.save(user);
+        log.info("Пользователь добавлен: {}", savedUser);
+        return mapper.toUserResponseDto(savedUser);
     }
 
     @Override

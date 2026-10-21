@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByLogin(String login);
@@ -18,4 +19,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             AND (:position IS NULL OR u.position = :position)
             """)
     List<User> findFiltered(Boolean isActive, UserRole role, UserPosition position);
+
+    Optional<User> findByLogin(String login);
 }
