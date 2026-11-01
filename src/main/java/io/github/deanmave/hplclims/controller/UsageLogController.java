@@ -1,11 +1,13 @@
 package io.github.deanmave.hplclims.controller;
 
+import io.github.deanmave.hplclims.domain.User;
 import io.github.deanmave.hplclims.domain.dto.request.*;
 import io.github.deanmave.hplclims.domain.dto.response.UsageLogResponseDto;
 import io.github.deanmave.hplclims.service.interfaces.UsageLogService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,8 +20,9 @@ public class UsageLogController {
 
     @PostMapping("/start")
     @ResponseStatus(HttpStatus.CREATED)
-    public UsageLogResponseDto startUsage(@Valid @RequestBody StartUsageRequest request) {
-        return service.startUsage(request);
+    public UsageLogResponseDto startUsage(@AuthenticationPrincipal User currentUser,
+                                          @Valid @RequestBody StartUsageRequest request) {
+        return service.startUsage(currentUser.getId(), request);
     }
 
     @PatchMapping("/{logId}/end")

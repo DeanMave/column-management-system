@@ -10,8 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StartUsageRequest {
-    @NotNull(message = "ID пользователя обязателен")
-    private Long userId;
     @NotNull(message = "ID колонки обязателен")
     private Long columnId;
     @NotBlank(message = "Номер задания должен быть указан")

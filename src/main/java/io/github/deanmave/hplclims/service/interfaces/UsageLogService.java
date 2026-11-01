@@ -9,7 +9,7 @@ import io.github.deanmave.hplclims.domain.dto.response.UsageLogResponseDto;
 import java.util.List;
 
 public interface UsageLogService {
-    UsageLogResponseDto startUsage(StartUsageRequest request);
+    UsageLogResponseDto startUsage(Long userId, StartUsageRequest request);
 
     UsageLogResponseDto endUsage(Long logId, EndUsageRequest request);
 

@@ -40,10 +40,10 @@ public class UsageLogServiceImpl implements UsageLogService {
 
     @Override
     @Transactional
-    public UsageLogResponseDto startUsage(StartUsageRequest request) {
-        log.info("Попытка взять пользователем:{} колонку:{} в работу", request.getUserId(), request.getColumnId());
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + request.getUserId() + " не найден"));
+    public UsageLogResponseDto startUsage(Long userId,StartUsageRequest request) {
+        log.info("Попытка взять пользователем:{} колонку:{} в работу", userId, request.getColumnId());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
         if (!user.isActive()) {
             throw new ValidationException("Только действующие сотрудники могут брать колонку в работу");
         }
