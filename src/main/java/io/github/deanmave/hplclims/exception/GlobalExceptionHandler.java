@@ -3,6 +3,9 @@ package io.github.deanmave.hplclims.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,5 +41,12 @@ public class GlobalExceptionHandler {
     public Map<String, String> handleDataIntegrity(final DataIntegrityViolationException e) {
         log.warn("Ошибка целостности данных: {}", e.getMessage());
         return Map.of("error", "Нарушение целостности данных. Возможно, значение уже используется.", "message", e.getMessage());
+    }
+
+    @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Map<String, String> handleAuthenticationException(Exception ex) {
+        log.warn("Ошибка аутентификации: {}", ex.getMessage());
+        return Map.of("error", "Ошибка аутентификации", "message", "Неверный логин или пароль");
     }
 }
