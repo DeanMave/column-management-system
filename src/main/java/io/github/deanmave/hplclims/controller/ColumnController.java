@@ -8,6 +8,7 @@ import io.github.deanmave.hplclims.service.interfaces.ColumnService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.List;
 public class ColumnController {
     private final ColumnService service;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ColumnResponseDto addNewColumn(@Valid @RequestBody ColumnCreateDto createDto) {
@@ -34,18 +36,21 @@ public class ColumnController {
         return service.getById(columnId);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{columnId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long columnId) {
         service.deleteById(columnId);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{columnId}/status")
     public ColumnResponseDto changeStatus(@PathVariable Long columnId,
                                           @RequestParam ColumnStatus status) {
         return service.changeStatus(columnId, status);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{columnId}")
     public ColumnResponseDto updateColumn(@PathVariable Long columnId,
                                           @Valid @RequestBody ColumnUpdateDto updateDto) {
