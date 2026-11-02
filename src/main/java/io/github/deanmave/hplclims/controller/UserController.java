@@ -32,42 +32,42 @@ public class UserController {
         return service.getById(userId);
     }
 
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'LAB_HEAD')")
     @PatchMapping("/{userId}/status")
     public UserResponseDto changeStatus(@PathVariable Long userId,
                                         @RequestParam boolean status) {
         return service.changeStatus(userId, status);
     }
 
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'LAB_HEAD')")
     @PatchMapping("/{userId}/password")
     public UserResponseDto changePassword(@PathVariable Long userId,
                                           @RequestBody String password) {
         return service.changePassword(userId, password);
     }
 
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'LAB_HEAD')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponseDto addNewUser(@Valid @RequestBody UserCreateDto createDto) {
         return service.create(createDto);
     }
 
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'LAB_HEAD')")
     @PatchMapping("/{userId}")
     public UserResponseDto updateProfile(@PathVariable Long userId,
                                          @Valid @RequestBody UserUpdateDto updateDto) {
         return service.updateProfile(userId, updateDto);
     }
 
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'LAB_HEAD')")
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void forceDeleteById(@PathVariable Long userId) {
         service.forceDeleteById(userId);
     }
 
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'LAB_HEAD')")
     @PatchMapping("/{userId}/deactivate")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void softDeleteById(@PathVariable Long userId) {

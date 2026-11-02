@@ -19,7 +19,7 @@ import java.util.List;
 public class UsageLogController {
     private final UsageLogService service;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SENIOR_USER', 'USER')")
     @PostMapping("/start")
     @ResponseStatus(HttpStatus.CREATED)
     public UsageLogResponseDto startUsage(@AuthenticationPrincipal User currentUser,
@@ -27,21 +27,21 @@ public class UsageLogController {
         return service.startUsage(currentUser.getId(), request);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}/end")
     public UsageLogResponseDto endUsage(@PathVariable Long logId,
                                         @Valid @RequestBody EndUsageRequest request) {
         return service.endUsage(logId, request);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}/reject")
     public UsageLogResponseDto rejectUsage(@PathVariable Long logId,
                                            @Valid @RequestBody RejectUsageRequest request) {
         return service.rejectUsage(logId, request);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}")
     public UsageLogResponseDto updateLog(@PathVariable Long logId,
                                          @Valid @RequestBody CorrectUsageLogRequest request) {
@@ -63,7 +63,7 @@ public class UsageLogController {
         return service.getActiveUsages();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @DeleteMapping("/{logId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long logId) {

@@ -19,7 +19,7 @@ import java.util.List;
 public class ColumnController {
     private final ColumnService service;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ColumnResponseDto addNewColumn(@Valid @RequestBody ColumnCreateDto createDto) {
@@ -31,26 +31,26 @@ public class ColumnController {
         return service.getAll();
     }
 
-    @GetMapping("/{columnId}")
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     public ColumnResponseDto getById(@PathVariable Long columnId) {
         return service.getById(columnId);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @DeleteMapping("/{columnId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long columnId) {
         service.deleteById(columnId);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @PatchMapping("/{columnId}/status")
     public ColumnResponseDto changeStatus(@PathVariable Long columnId,
                                           @RequestParam ColumnStatus status) {
         return service.changeStatus(columnId, status);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @PatchMapping("/{columnId}")
     public ColumnResponseDto updateColumn(@PathVariable Long columnId,
                                           @Valid @RequestBody ColumnUpdateDto updateDto) {
