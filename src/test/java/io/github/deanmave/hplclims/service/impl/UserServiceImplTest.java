@@ -247,7 +247,7 @@ class UserServiceImplTest {
             testUser.setFirstName("Олег");
             testUser.setLastName("Холмов");
             testUser.setMiddleName("Викторович");
-            testUser.setRole(UserRole.ADMIN);
+            testUser.setRole(UserRole.LAB_HEAD);
             testUser.setPosition(UserPosition.SENIOR_CHEMIST_ANALYST);
             return testUser;
         });

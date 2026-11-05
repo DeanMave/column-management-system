@@ -81,7 +81,7 @@ public class ColumnServiceImpl implements ColumnService {
         log.info("Попытка смены статуса колонки с ID: {}", id);
         HplcColumn existingColumn = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
-        if (existingColumn.getStatus() == ColumnStatus.IN_USE) {
+        if (existingColumn.getStatus() == ColumnStatus.IN_USE && newStatus!=ColumnStatus.AVAILABLE) {
             throw new ValidationException("Нельзя изменить статус колонки, которая находится в работе");
         }
         if (newStatus == ColumnStatus.DISCARDED && existingColumn.isExternal()) {
