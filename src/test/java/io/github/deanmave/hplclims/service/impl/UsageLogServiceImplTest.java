@@ -1,9 +1,6 @@
 package io.github.deanmave.hplclims.service.impl;
 
-import io.github.deanmave.hplclims.domain.ColumnStatus;
-import io.github.deanmave.hplclims.domain.ColumnUsageLog;
-import io.github.deanmave.hplclims.domain.HplcColumn;
-import io.github.deanmave.hplclims.domain.User;
+import io.github.deanmave.hplclims.domain.*;
 import io.github.deanmave.hplclims.domain.dto.request.CorrectUsageLogRequest;
 import io.github.deanmave.hplclims.domain.dto.request.EndUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.request.RejectUsageRequest;
@@ -106,7 +103,7 @@ class UsageLogServiceImplTest {
             testUser.setActive(false);
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-            assertThatThrownBy(() -> service.startUsage(1L,request))
+            assertThatThrownBy(() -> service.startUsage(1L, request))
                     .isInstanceOf(ValidationException.class);
 
             verify(columnService, never()).changeStatus(eq(testColumn.getId()), any());
@@ -120,10 +117,25 @@ class UsageLogServiceImplTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(columnRepository.findById(1L)).thenReturn(Optional.of(testColumn));
 
-            assertThatThrownBy(() -> service.startUsage(1L,request))
+            assertThatThrownBy(() -> service.startUsage(1L, request))
                     .isInstanceOf(ConflictException.class);
 
             verify(columnService, never()).changeStatus(eq(testColumn.getId()), any());
+            verify(repository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("выброс ConflictException, если колонка выбыла или возвращена")
+        void whenColumnIsDiscarded_ShouldThrowConflictException() {
+            StartUsageRequest request = new StartUsageRequest(1L, "TASK-1", "Aspirin");
+            testColumn.setStatus(ColumnStatus.DISCARDED);
+
+            when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+            when(columnRepository.findById(request.getColumnId())).thenReturn(Optional.of(testColumn));
+
+            assertThatThrownBy(() -> service.startUsage(1L, request))
+                    .isInstanceOf(ConflictException.class);
+
             verify(repository, never()).save(any());
         }
 
@@ -136,7 +148,7 @@ class UsageLogServiceImplTest {
             when(repository.save(testLog)).thenReturn(testLog);
             when(mapper.toUsageLogResponseDto(testLog)).thenReturn(testResponseDto);
 
-            UsageLogResponseDto result = service.startUsage(1L,request);
+            UsageLogResponseDto result = service.startUsage(1L, request);
 
             assertThat(result).isEqualTo(testResponseDto);
             verify(columnService).changeStatus(1L, ColumnStatus.IN_USE);
@@ -151,6 +163,7 @@ class UsageLogServiceImplTest {
 
         private ColumnUsageLog existingLog;
         private EndUsageRequest request;
+        private User otherUser;
 
         @BeforeEach
         void setUpEndUsage() {
@@ -166,6 +179,10 @@ class UsageLogServiceImplTest {
             request.setMinPressure(53);
             request.setMaxPressure(119);
             request.setEndDate(LocalDate.now());
+
+            otherUser = new User();
+            otherUser.setId(5L);
+            otherUser.setRole(UserRole.USER);
         }
 
         @Test
@@ -173,7 +190,7 @@ class UsageLogServiceImplTest {
         void whenLogNotFound_ShouldThrowNotFoundException() {
             when(repository.findById(10L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.endUsage(10L, request))
+            assertThatThrownBy(() -> service.endUsage(10L, testUser, request))
                     .isInstanceOf(NotFoundException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -186,7 +203,7 @@ class UsageLogServiceImplTest {
             existingLog.setEndDate(LocalDate.now().minusDays(1));
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
 
-            assertThatThrownBy(() -> service.endUsage(10L, request))
+            assertThatThrownBy(() -> service.endUsage(10L, testUser, request))
                     .isInstanceOf(ConflictException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -199,7 +216,7 @@ class UsageLogServiceImplTest {
             request.setEndDate(LocalDate.now().minusDays(4));
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
 
-            assertThatThrownBy(() -> service.endUsage(10L, request))
+            assertThatThrownBy(() -> service.endUsage(10L, testUser, request))
                     .isInstanceOf(ValidationException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -212,7 +229,7 @@ class UsageLogServiceImplTest {
             request.setEndDate(LocalDate.now().plusDays(2));
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
 
-            assertThatThrownBy(() -> service.endUsage(10L, request))
+            assertThatThrownBy(() -> service.endUsage(10L, testUser, request))
                     .isInstanceOf(ValidationException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -220,13 +237,46 @@ class UsageLogServiceImplTest {
         }
 
         @Test
-        @DisplayName("успешное завершение лога и смена статуса колонки в AVAILABLE")
+        @DisplayName("выброс ValidationException, если лог пытается завершить другой пользователь")
+        void whenUserIsNotOwnerAndNotManager_ShouldThrowValidationException() {
+            when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
+
+            assertThatThrownBy(() -> service.endUsage(10L, otherUser, request))
+                    .isInstanceOf(ValidationException.class);
+
+            verify(repository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("успешное завершение лога зав.лаборатории или старшим сотрудником")
+        void whenUserIsLabHeadOrSeniorUser_ShouldCloseLogAndSetColumnAvailable() {
+            otherUser.setRole(UserRole.LAB_HEAD);
+
+            when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
+            when(repository.save(existingLog)).thenReturn(existingLog);
+            when(mapper.toUsageLogResponseDto(existingLog)).thenReturn(testResponseDto);
+
+            UsageLogResponseDto result = service.endUsage(10L, otherUser, request);
+            assertThat(result).isEqualTo(testResponseDto);
+
+            assertThat(existingLog.getEndDate()).isEqualTo(request.getEndDate());
+            assertThat(existingLog.getAnalysisParameters()).isEqualTo("А - 80% ACN, C - 20% H2O, 1 мл/мин");
+            assertThat(existingLog.getStoragePhase()).isEqualTo("80% ACN : 20% H2O");
+            assertThat(existingLog.getMinPressure()).isEqualTo(53);
+            assertThat(existingLog.getMaxPressure()).isEqualTo(119);
+
+            verify(columnService).changeStatus(testColumn.getId(), ColumnStatus.AVAILABLE);
+            verify(repository).save(existingLog);
+        }
+
+        @Test
+        @DisplayName("успешное завершение лога владельцем и смена статуса колонки в AVAILABLE")
         void whenDataIsValid_ShouldCloseLogAndSetColumnAvailable() {
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
             when(repository.save(existingLog)).thenReturn(existingLog);
             when(mapper.toUsageLogResponseDto(existingLog)).thenReturn(testResponseDto);
 
-            UsageLogResponseDto result = service.endUsage(10L, request);
+            UsageLogResponseDto result = service.endUsage(10L, testUser, request);
 
             assertThat(result).isEqualTo(testResponseDto);
 
@@ -244,6 +294,7 @@ class UsageLogServiceImplTest {
     @Nested
     @DisplayName("rejectUsage: отказ от колонки")
     class RejectUsage {
+        private User otherUser;
         private RejectUsageRequest request;
         private ColumnUsageLog existingLog;
         private final String rejectReason = "Причина отказа";
@@ -259,6 +310,10 @@ class UsageLogServiceImplTest {
             existingLog.setUser(testUser);
             existingLog.setHplcColumn(testColumn);
             existingLog.setStartDate(LocalDate.now().minusDays(3));
+
+            otherUser = new User();
+            otherUser.setId(5L);
+            otherUser.setRole(UserRole.USER);
         }
 
         @Test
@@ -266,7 +321,7 @@ class UsageLogServiceImplTest {
         void whenLogNotFound_ShouldThrowNotFoundException() {
             when(repository.findById(10L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.rejectUsage(10L, request))
+            assertThatThrownBy(() -> service.rejectUsage(10L, testUser, request))
                     .isInstanceOf(NotFoundException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -279,7 +334,7 @@ class UsageLogServiceImplTest {
             existingLog.setEndDate(LocalDate.now().minusDays(1));
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
 
-            assertThatThrownBy(() -> service.rejectUsage(10L, request))
+            assertThatThrownBy(() -> service.rejectUsage(10L, testUser, request))
                     .isInstanceOf(ConflictException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -292,7 +347,7 @@ class UsageLogServiceImplTest {
             request.setDate(LocalDate.now().minusDays(6));
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
 
-            assertThatThrownBy(() -> service.rejectUsage(10L, request))
+            assertThatThrownBy(() -> service.rejectUsage(10L, testUser, request))
                     .isInstanceOf(ValidationException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
@@ -305,11 +360,41 @@ class UsageLogServiceImplTest {
             request.setDate(LocalDate.now().plusDays(2));
             when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
 
-            assertThatThrownBy(() -> service.rejectUsage(10L, request))
+            assertThatThrownBy(() -> service.rejectUsage(10L, testUser, request))
                     .isInstanceOf(ValidationException.class);
 
             verify(columnService, never()).changeStatus(anyLong(), any());
             verify(repository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("выброс ValidationException, если лог пытается завершить другой пользователь")
+        void whenUserIsNotOwnerAndNotManager_ShouldThrowValidationException() {
+            when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
+
+            assertThatThrownBy(() -> service.rejectUsage(10L, otherUser, request))
+                    .isInstanceOf(ValidationException.class);
+
+            verify(repository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("успешный завершение лога зав.лаборатории или старшим сотрудником")
+        void whenUserIsLabHeadOrSeniorUser_ShouldCloseLogAndSetColumnAvailable() {
+            otherUser.setRole(UserRole.LAB_HEAD);
+
+            when(repository.findById(10L)).thenReturn(Optional.of(existingLog));
+            when(repository.save(existingLog)).thenReturn(existingLog);
+            when(mapper.toUsageLogResponseDto(existingLog)).thenReturn(testResponseDto);
+
+            UsageLogResponseDto result = service.rejectUsage(10L, otherUser, request);
+            assertThat(result).isEqualTo(testResponseDto);
+
+            assertThat(existingLog.getEndDate()).isEqualTo(LocalDate.now());
+            assertThat(existingLog.getRejectionReason()).isEqualTo("Причина отказа");
+
+            verify(columnService).changeStatus(testColumn.getId(), ColumnStatus.AVAILABLE);
+            verify(repository).save(existingLog);
         }
 
         @Test
@@ -319,7 +404,7 @@ class UsageLogServiceImplTest {
             when(repository.save(existingLog)).thenReturn(existingLog);
             when(mapper.toUsageLogResponseDto(existingLog)).thenReturn(testResponseDto);
 
-            UsageLogResponseDto result = service.rejectUsage(10L, request);
+            UsageLogResponseDto result = service.rejectUsage(10L, testUser, request);
 
             assertThat(result).isEqualTo(testResponseDto);
 

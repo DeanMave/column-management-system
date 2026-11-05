@@ -31,16 +31,18 @@ public class UsageLogController {
 
     @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}/end")
-    public UsageLogResponseDto endUsage(@PathVariable Long logId,
+    public UsageLogResponseDto endUsage(@AuthenticationPrincipal User currentUser,
+                                        @PathVariable Long logId,
                                         @Valid @RequestBody EndUsageRequest request) {
-        return service.endUsage(logId, request);
+        return service.endUsage(logId, currentUser, request);
     }
 
     @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}/reject")
-    public UsageLogResponseDto rejectUsage(@PathVariable Long logId,
+    public UsageLogResponseDto rejectUsage(@AuthenticationPrincipal User currentUser,
+                                           @PathVariable Long logId,
                                            @Valid @RequestBody RejectUsageRequest request) {
-        return service.rejectUsage(logId, request);
+        return service.rejectUsage(logId, currentUser, request);
     }
 
     @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")

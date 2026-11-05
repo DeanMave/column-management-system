@@ -1,9 +1,6 @@
 package io.github.deanmave.hplclims.service.impl;
 
-import io.github.deanmave.hplclims.domain.ColumnStatus;
-import io.github.deanmave.hplclims.domain.ColumnUsageLog;
-import io.github.deanmave.hplclims.domain.HplcColumn;
-import io.github.deanmave.hplclims.domain.User;
+import io.github.deanmave.hplclims.domain.*;
 import io.github.deanmave.hplclims.domain.dto.request.CorrectUsageLogRequest;
 import io.github.deanmave.hplclims.domain.dto.request.EndUsageRequest;
 import io.github.deanmave.hplclims.domain.dto.request.RejectUsageRequest;
@@ -40,7 +37,7 @@ public class UsageLogServiceImpl implements UsageLogService {
 
     @Override
     @Transactional
-    public UsageLogResponseDto startUsage(Long userId,StartUsageRequest request) {
+    public UsageLogResponseDto startUsage(Long userId, StartUsageRequest request) {
         log.info("Попытка взять пользователем:{} колонку:{} в работу", userId, request.getColumnId());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
@@ -50,7 +47,12 @@ public class UsageLogServiceImpl implements UsageLogService {
         HplcColumn hplcColumn = columnRepository.findById(request.getColumnId())
                 .orElseThrow(() -> new NotFoundException("Колонка с ID " + request.getColumnId() + " не найден"));
         if (!hplcColumn.isAvailable()) {
-            throw new ConflictException("Колонка с id: " + hplcColumn.getId() + " сейчас занята");
+            if(hplcColumn.getStatus()==ColumnStatus.IN_USE) {
+                throw new ConflictException("Колонка с id: " + hplcColumn.getId() + " сейчас занята");
+            }
+            if(hplcColumn.getStatus()==ColumnStatus.DISCARDED || hplcColumn.getStatus()==ColumnStatus.RETURNED){
+                throw new ConflictException("Колонка с id: " + hplcColumn.getId() + " выбыла или возвращена производителю");
+            }
         }
         columnService.changeStatus(hplcColumn.getId(), ColumnStatus.IN_USE);
         ColumnUsageLog newLog = mapper.toColumnUsageLog(request, user, hplcColumn);
@@ -62,10 +64,15 @@ public class UsageLogServiceImpl implements UsageLogService {
 
     @Override
     @Transactional
-    public UsageLogResponseDto endUsage(Long logId, EndUsageRequest request) {
+    public UsageLogResponseDto endUsage(Long logId, User currentUser, EndUsageRequest request) {
         log.info("Попытка завершения анализа для лога:{}", logId);
         ColumnUsageLog existLog = repository.findById(logId)
                 .orElseThrow(() -> new NotFoundException("Лога с id: " + logId + " не найдено"));
+        boolean isOwner = existLog.getUser().getId().equals(currentUser.getId());
+        boolean isManager = currentUser.getRole() == UserRole.LAB_HEAD || currentUser.getRole() == UserRole.SENIOR_USER;
+        if (!isOwner && !isManager) {
+            throw new ValidationException("Вы не можете завершить чужой анализ. Это может сделать только сотрудник, взявший колонку, или Зав. лабораторией.");
+        }
         if (existLog.getEndDate() != null) {
             throw new ConflictException("Анализ по логу с id: " + logId + " уже завершён");
         }
@@ -85,10 +92,15 @@ public class UsageLogServiceImpl implements UsageLogService {
 
     @Override
     @Transactional
-    public UsageLogResponseDto rejectUsage(Long logId, RejectUsageRequest request) {
+    public UsageLogResponseDto rejectUsage(Long logId, User currentUser, RejectUsageRequest request) {
         log.info("Попытка отказа от колонки для лога:{}", logId);
         ColumnUsageLog existLog = repository.findById(logId)
                 .orElseThrow(() -> new NotFoundException("Лога с id: " + logId + " не найдено"));
+        boolean isOwner = existLog.getUser().getId().equals(currentUser.getId());
+        boolean isManager = currentUser.getRole() == UserRole.LAB_HEAD || currentUser.getRole() == UserRole.SENIOR_USER;
+        if (!isOwner && !isManager) {
+            throw new ValidationException("Вы не можете завершить чужой анализ. Это может сделать только сотрудник, взявший колонку, или Зав. лабораторией.");
+        }
         if (existLog.getEndDate() != null) {
             throw new ConflictException("Анализ по логу с id: " + logId + " уже завершён");
         }
