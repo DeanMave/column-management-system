@@ -31,6 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
+            log.info("Запрос на URI: {}, Токен найден: {}", request.getRequestURI(), StringUtils.hasText(jwt));
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String login = tokenProvider.getLoginFromToken(jwt);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(login);

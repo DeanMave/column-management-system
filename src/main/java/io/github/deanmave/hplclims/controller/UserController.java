@@ -6,6 +6,7 @@ import io.github.deanmave.hplclims.domain.dto.request.UserCreateDto;
 import io.github.deanmave.hplclims.domain.dto.request.UserUpdateDto;
 import io.github.deanmave.hplclims.domain.dto.response.UserResponseDto;
 import io.github.deanmave.hplclims.service.interfaces.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(path = "/api/v1/users")
+@SecurityRequirement(name = "BearerAuth")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService service;

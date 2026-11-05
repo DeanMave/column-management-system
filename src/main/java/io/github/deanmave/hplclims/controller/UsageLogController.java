@@ -4,6 +4,7 @@ import io.github.deanmave.hplclims.domain.User;
 import io.github.deanmave.hplclims.domain.dto.request.*;
 import io.github.deanmave.hplclims.domain.dto.response.UsageLogResponseDto;
 import io.github.deanmave.hplclims.service.interfaces.UsageLogService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,11 +16,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping(path = "/api/v1/usage-logs")
+@SecurityRequirement(name = "BearerAuth")
 @RequiredArgsConstructor
 public class UsageLogController {
     private final UsageLogService service;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'SENIOR_USER', 'USER')")
+    @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PostMapping("/start")
     @ResponseStatus(HttpStatus.CREATED)
     public UsageLogResponseDto startUsage(@AuthenticationPrincipal User currentUser,
@@ -27,21 +29,21 @@ public class UsageLogController {
         return service.startUsage(currentUser.getId(), request);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'SENIOR_USER', 'USER')")
+    @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}/end")
     public UsageLogResponseDto endUsage(@PathVariable Long logId,
                                         @Valid @RequestBody EndUsageRequest request) {
         return service.endUsage(logId, request);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'SENIOR_USER', 'USER')")
+    @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}/reject")
     public UsageLogResponseDto rejectUsage(@PathVariable Long logId,
                                            @Valid @RequestBody RejectUsageRequest request) {
         return service.rejectUsage(logId, request);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'SENIOR_USER', 'USER')")
+    @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}")
     public UsageLogResponseDto updateLog(@PathVariable Long logId,
                                          @Valid @RequestBody CorrectUsageLogRequest request) {

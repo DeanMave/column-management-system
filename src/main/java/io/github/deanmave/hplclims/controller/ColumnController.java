@@ -5,6 +5,7 @@ import io.github.deanmave.hplclims.domain.dto.request.ColumnCreateDto;
 import io.github.deanmave.hplclims.domain.dto.request.ColumnUpdateDto;
 import io.github.deanmave.hplclims.domain.dto.response.ColumnResponseDto;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(path = "/api/v1/columns")
+@SecurityRequirement(name = "BearerAuth")
 @RequiredArgsConstructor
 public class ColumnController {
     private final ColumnService service;
