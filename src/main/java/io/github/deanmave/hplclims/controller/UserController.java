@@ -9,6 +9,10 @@ import io.github.deanmave.hplclims.service.interfaces.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -23,10 +27,11 @@ public class UserController {
     private final UserService service;
 
     @GetMapping
-    public List<UserResponseDto> getUsers(@RequestParam(required = false) Boolean active,
+    public Page<UserResponseDto> getUsers(@RequestParam(required = false) Boolean active,
                                           @RequestParam(required = false) UserRole role,
-                                          @RequestParam(required = false) UserPosition position) {
-        return service.getUsersFiltered(active, role, position);
+                                          @RequestParam(required = false) UserPosition position,
+                                          @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return service.getUsersFiltered(active, role, position,pageable);
     }
 
     @GetMapping("/{userId}")

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Collections;
@@ -117,10 +118,10 @@ class UserServiceImplTest {
     @Test
     @DisplayName("getUsersFiltered: получение списка пользователей при их наличии в БД")
     void getUsersFiltered_WhenUsersExist_ShouldReturnListOfUsers() {
-        when(repository.findFiltered(null,null,null)).thenReturn(List.of(testUser));
+        when(repository.findFiltered(null, null, null, null)).thenReturn(new PageImpl<>(List.of(testUser)));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getUsersFiltered(null,null,null)).containsExactly(testResponseDto);
+        assertThat(service.getUsersFiltered(null, null, null, null)).containsExactly(testResponseDto);
     }
 
     @Test
@@ -145,10 +146,10 @@ class UserServiceImplTest {
     @DisplayName("getUsersFiltered: получение списка активных пользователей")
     void getUsersFiltered_WhenActiveUsersExist_ShouldReturnListOfUsers() {
         testUser.setActive(true);
-        when(repository.findFiltered(true,null,null)).thenReturn(List.of(testUser));
+        when(repository.findFiltered(true, null, null, null)).thenReturn(new PageImpl<>(List.of(testUser)));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getUsersFiltered(true,null,null)).containsExactly(testResponseDto);
+        assertThat(service.getUsersFiltered(true, null, null, null)).containsExactly(testResponseDto);
     }
 
     @Test
@@ -156,28 +157,28 @@ class UserServiceImplTest {
     void getUsersFiltered_WhenNotActiveUsersExist_ShouldReturnListOfUsers() {
         testUser.setActive(false);
         testResponseDto.setActive(false);
-        when(repository.findFiltered(false,null,null)).thenReturn(List.of(testUser));
+        when(repository.findFiltered(false, null, null, null)).thenReturn(new PageImpl<>(List.of(testUser)));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getUsersFiltered(false,null,null)).containsExactly(testResponseDto);
+        assertThat(service.getUsersFiltered(false, null, null, null)).containsExactly(testResponseDto);
     }
 
     @Test
     @DisplayName("getUsersFiltered: получение пустого списка, если пользователи в БД отсутствуют")
     void getUsersFiltered_WhenNoUsersExist_ShouldReturnEmptyList() {
-        when(repository.findFiltered(null,null,null)).thenReturn(Collections.emptyList());
+        when(repository.findFiltered(null, null, null, null)).thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        assertThat(service.getUsersFiltered(null,null,null)).isEmpty();
+        assertThat(service.getUsersFiltered(null, null, null, null)).isEmpty();
     }
 
     @Test
     @DisplayName("getUsersFiltered: получение списка пользователей по должности")
     void getUsersFiltered_WhenUsersByPositionExist_ShouldReturnListOfUsers() {
         testResponseDto.setPosition(UserPosition.CHEMIST_ANALYST);
-        when(repository.findFiltered(null,null,UserPosition.CHEMIST_ANALYST)).thenReturn(List.of(testUser));
+        when(repository.findFiltered(null, null, UserPosition.CHEMIST_ANALYST, null)).thenReturn(new PageImpl<>(List.of(testUser)));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
-        assertThat(service.getUsersFiltered(null,null,UserPosition.CHEMIST_ANALYST)).containsExactly(testResponseDto);
+        assertThat(service.getUsersFiltered(null, null, UserPosition.CHEMIST_ANALYST, null)).containsExactly(testResponseDto);
     }
 
     @Test
