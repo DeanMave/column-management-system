@@ -53,7 +53,6 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
-
     @Override
     public UserResponseDto getById(Long id) {
         log.info("Запрос поиска пользователя по ID: {}", id);

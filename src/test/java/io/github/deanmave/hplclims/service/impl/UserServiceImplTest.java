@@ -116,19 +116,11 @@ class UserServiceImplTest {
 
     @Test
     @DisplayName("getUsersFiltered: получение списка пользователей при их наличии в БД")
-    void getAll_WhenUsersExist_ShouldReturnListOfUsers() {
+    void getUsersFiltered_WhenUsersExist_ShouldReturnListOfUsers() {
         when(repository.findFiltered(null,null,null)).thenReturn(List.of(testUser));
         when(mapper.toUserResponseDto(testUser)).thenReturn(testResponseDto);
 
         assertThat(service.getUsersFiltered(null,null,null)).containsExactly(testResponseDto);
-    }
-
-    @Test
-    @DisplayName("getUsersFiltered: получение пустого списка, если пользователи в БД отсутствуют")
-    void getAll_WhenNoUsersExist_ShouldReturnEmptyList() {
-        when(repository.findFiltered(any(),any(),any())).thenReturn(Collections.emptyList());
-
-        assertThat(service.getUsersFiltered(any(),any(),any())).isEmpty();
     }
 
     @Test

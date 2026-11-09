@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,9 +48,17 @@ public class ColumnServiceImpl implements ColumnService {
     }
 
     @Override
-    public List<ColumnResponseDto> getAll() {
-        log.info("Запрос на получение всех колонок");
-        return repository.findAll().stream()
+    public List<ColumnResponseDto> getColumnsFiltered(Boolean isExternal, String ownerOrganization,
+                                                      String internalCode, String storageLocation,
+                                                      ColumnStatus status) {
+        log.info("Запрос на получение колонок: isExternal={}, ownerOrganization={}, internalCode={}, storageLocation={}",
+                isExternal, ownerOrganization, internalCode, storageLocation);
+
+        ownerOrganization = StringUtils.hasText(ownerOrganization) ? "%" + ownerOrganization.trim() + "%" : null;
+        internalCode = StringUtils.hasText(internalCode) ? "%" + internalCode.trim() + "%" : null;
+        storageLocation = StringUtils.hasText(storageLocation) ? "%" + storageLocation.trim() + "%" : null;
+
+        return repository.findFiltered(isExternal, ownerOrganization, internalCode, storageLocation, status).stream()
                 .map(mapper::toColumnResponseDto)
                 .collect(Collectors.toList());
     }
@@ -81,7 +90,7 @@ public class ColumnServiceImpl implements ColumnService {
         log.info("Попытка смены статуса колонки с ID: {}", id);
         HplcColumn existingColumn = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Колонка с ID: " + id + " не найдена"));
-        if (existingColumn.getStatus() == ColumnStatus.IN_USE && newStatus!=ColumnStatus.AVAILABLE) {
+        if (existingColumn.getStatus() == ColumnStatus.IN_USE && newStatus != ColumnStatus.AVAILABLE) {
             throw new ValidationException("Нельзя изменить статус колонки, которая находится в работе");
         }
         if (newStatus == ColumnStatus.DISCARDED && existingColumn.isExternal()) {

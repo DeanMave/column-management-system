@@ -29,11 +29,14 @@ public class ColumnController {
     }
 
     @GetMapping
-    public List<ColumnResponseDto> getAll() {
-        return service.getAll();
+    public List<ColumnResponseDto> getAll(@RequestParam(required = false) Boolean isExternal,
+                                          @RequestParam(required = false) String ownerOrganization,
+                                          @RequestParam(required = false) String internalCode,
+                                          @RequestParam(required = false) String storageLocation,
+                                          @RequestParam (required = false) ColumnStatus status) {
+        return service.getColumnsFiltered(isExternal, ownerOrganization, internalCode, storageLocation, status);
     }
 
-    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     public ColumnResponseDto getById(@PathVariable Long columnId) {
         return service.getById(columnId);
     }

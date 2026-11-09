@@ -11,7 +11,9 @@ import java.util.List;
 public interface ColumnService {
     ColumnResponseDto create(ColumnCreateDto createDto);
 
-    List<ColumnResponseDto> getAll();
+    List<ColumnResponseDto> getColumnsFiltered(Boolean isExternal, String ownerOrganization,
+                                               String internalCode, String storageLocation,
+                                               ColumnStatus status);
 
     ColumnResponseDto getById(Long id);
 
