@@ -8,6 +8,10 @@ import io.github.deanmave.hplclims.service.interfaces.ColumnService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -29,12 +33,13 @@ public class ColumnController {
     }
 
     @GetMapping
-    public List<ColumnResponseDto> getAll(@RequestParam(required = false) Boolean isExternal,
+    public Page<ColumnResponseDto> getAll(@RequestParam(required = false) Boolean isExternal,
                                           @RequestParam(required = false) String ownerOrganization,
                                           @RequestParam(required = false) String internalCode,
                                           @RequestParam(required = false) String storageLocation,
-                                          @RequestParam (required = false) ColumnStatus status) {
-        return service.getColumnsFiltered(isExternal, ownerOrganization, internalCode, storageLocation, status);
+                                          @RequestParam(required = false) ColumnStatus status,
+                                          @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return service.getColumnsFiltered(isExternal, ownerOrganization, internalCode, storageLocation, status, pageable);
     }
 
     public ColumnResponseDto getById(@PathVariable Long columnId) {

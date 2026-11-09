@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -144,32 +145,32 @@ class ColumnServiceImplTest {
     void getColumnsFiltered_WhenColumnsExist_ShouldReturnListOfColumns() {
         when(mapper.toColumnResponseDto(testColumn)).thenReturn(testResponseDto);
         when(repository.findFiltered(null, null,
-                null, null, null)).thenReturn(List.of(testColumn));
+                null, null, null, null)).thenReturn(new PageImpl<>(List.of(testColumn)));
 
         assertThat(service.getColumnsFiltered(null, null,
-                null, null, null)).containsExactly(testResponseDto);
+                null, null, null, null)).containsExactly(testResponseDto);
     }
 
     @Test
     @DisplayName("getColumnsFiltered: получение пустого списка, если колонки в БД отсутствуют")
     void getColumnsFiltered_WhenNoColumnsExist_ShouldReturnEmptyList() {
         when(repository.findFiltered(null, null, null,
-                null, null)).thenReturn(Collections.emptyList());
+                null, null, null)).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         assertThat(service.getColumnsFiltered(null, null,
-                null, null, null)).isEmpty();
+                null, null, null, null)).isEmpty();
     }
 
     @Test
     @DisplayName("getColumnsFiltered: превращение пустых строк в null перед вызовом репозитория")
     void getColumnsFiltered_WhenBlankStringsPassed_ShouldCallRepositoryWithNulls() {
         when(repository.findFiltered(null, null,
-                null, null, null)).thenReturn(List.of(testColumn));
+                null, null, null, null)).thenReturn(new PageImpl<>(List.of(testColumn)));
 
-        service.getColumnsFiltered(null, "   ", "", "  ", null);
+        service.getColumnsFiltered(null, "   ", "", "  ", null, null);
 
         verify(repository).findFiltered(null, null,
-                null, null, null);
+                null, null, null,null);
     }
 
     @Test

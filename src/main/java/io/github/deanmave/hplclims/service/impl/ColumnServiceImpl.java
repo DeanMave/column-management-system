@@ -14,6 +14,8 @@ import io.github.deanmave.hplclims.repository.UsageLogRepository;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -48,9 +50,9 @@ public class ColumnServiceImpl implements ColumnService {
     }
 
     @Override
-    public List<ColumnResponseDto> getColumnsFiltered(Boolean isExternal, String ownerOrganization,
+    public Page<ColumnResponseDto> getColumnsFiltered(Boolean isExternal, String ownerOrganization,
                                                       String internalCode, String storageLocation,
-                                                      ColumnStatus status) {
+                                                      ColumnStatus status, Pageable pageable) {
         log.info("Запрос на получение колонок: isExternal={}, ownerOrganization={}, internalCode={}, storageLocation={}",
                 isExternal, ownerOrganization, internalCode, storageLocation);
 
@@ -58,9 +60,9 @@ public class ColumnServiceImpl implements ColumnService {
         internalCode = StringUtils.hasText(internalCode) ? "%" + internalCode.trim() + "%" : null;
         storageLocation = StringUtils.hasText(storageLocation) ? "%" + storageLocation.trim() + "%" : null;
 
-        return repository.findFiltered(isExternal, ownerOrganization, internalCode, storageLocation, status).stream()
-                .map(mapper::toColumnResponseDto)
-                .collect(Collectors.toList());
+        Page<HplcColumn> columnsPage = repository.findFiltered(isExternal, ownerOrganization, internalCode,
+                storageLocation, status, pageable);
+        return columnsPage.map(mapper::toColumnResponseDto);
     }
 
     @Override

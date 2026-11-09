@@ -2,10 +2,11 @@ package io.github.deanmave.hplclims.repository;
 
 import io.github.deanmave.hplclims.domain.ColumnStatus;
 import io.github.deanmave.hplclims.domain.HplcColumn;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
 
-import java.util.List;
 
 public interface ColumnRepository extends JpaRepository<HplcColumn, Long> {
     @Query(value = "SELECT nextval('column_int_code_seq')", nativeQuery = true)
@@ -27,9 +28,10 @@ public interface ColumnRepository extends JpaRepository<HplcColumn, Long> {
             LOWER(h.storageLocation) LIKE LOWER(CAST(:storageLocation AS string)))
         AND (:status IS NULL OR h.status = :status)
         """)
-    List<HplcColumn> findFiltered(Boolean isExternal,
+    Page<HplcColumn> findFiltered(Boolean isExternal,
                                   String ownerOrganization,
                                   String internalCode,
                                   String storageLocation,
-                                  ColumnStatus status);
+                                  ColumnStatus status,
+                                  Pageable pageable);
 }
