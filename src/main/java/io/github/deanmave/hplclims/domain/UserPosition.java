@@ -15,7 +15,9 @@ public enum UserPosition {
     METROLOGIST("Метролог"),
     QUALITY_DEPT_SPECIALIST("Сотрудник отдела качества"),
     DIRECTOR("Директор"),
-    ORG_DEPT_SPECIALIST("Сотрудник орг. отдела");
+    HEAD_OF_ORG_DEPT("Руководитель организационного отдела"),
+    ORG_DEPT_SPECIALIST("Сотрудник организационного отдела"),
+    SYSTEM_ADMINISTRATOR("Системный администратор");
 
     private final String title;
 }

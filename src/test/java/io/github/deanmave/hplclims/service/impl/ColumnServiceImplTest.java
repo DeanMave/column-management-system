@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -140,20 +141,36 @@ class ColumnServiceImplTest {
     }
 
     @Test
-    @DisplayName("getAll: получение списка колонок при их наличии в БД")
-    void getAll_WhenColumnsExist_ShouldReturnListOfColumns() {
+    @DisplayName("getColumnsFiltered: получение списка колонок при их наличии в БД")
+    void getColumnsFiltered_WhenColumnsExist_ShouldReturnListOfColumns() {
         when(mapper.toColumnResponseDto(testColumn)).thenReturn(testResponseDto);
-        when(repository.findAll()).thenReturn(List.of(testColumn));
+        when(repository.findFiltered(null, null,
+                null, null, null, null)).thenReturn(new PageImpl<>(List.of(testColumn)));
 
-        assertThat(service.getAll()).containsExactly(testResponseDto);
+        assertThat(service.getColumnsFiltered(null, null,
+                null, null, null, null)).containsExactly(testResponseDto);
     }
 
     @Test
-    @DisplayName("getAll: получение пустого списка, если колонки в БД отсутствуют")
-    void getAll_WhenNoColumnsExist_ShouldReturnEmptyList() {
-        when(repository.findAll()).thenReturn(Collections.emptyList());
+    @DisplayName("getColumnsFiltered: получение пустого списка, если колонки в БД отсутствуют")
+    void getColumnsFiltered_WhenNoColumnsExist_ShouldReturnEmptyList() {
+        when(repository.findFiltered(null, null, null,
+                null, null, null)).thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        assertThat(service.getAll()).isEmpty();
+        assertThat(service.getColumnsFiltered(null, null,
+                null, null, null, null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("getColumnsFiltered: превращение пустых строк в null перед вызовом репозитория")
+    void getColumnsFiltered_WhenBlankStringsPassed_ShouldCallRepositoryWithNulls() {
+        when(repository.findFiltered(null, null,
+                null, null, null, null)).thenReturn(new PageImpl<>(List.of(testColumn)));
+
+        service.getColumnsFiltered(null, "   ", "", "  ", null, null);
+
+        verify(repository).findFiltered(null, null,
+                null, null, null,null);
     }
 
     @Test

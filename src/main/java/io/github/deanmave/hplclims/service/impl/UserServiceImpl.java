@@ -14,6 +14,9 @@ import io.github.deanmave.hplclims.repository.UserRepository;
 import io.github.deanmave.hplclims.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository repository;
     private final UserMapper mapper;
     private final UsageLogRepository logRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -36,19 +40,19 @@ public class UserServiceImpl implements UserService {
         if (repository.existsByLogin(userDto.getLogin())) {
             throw new ConflictException("Пользователь с логином " + userDto.getLogin() + " уже существует.");
         }
-        User newUser = repository.save(mapper.toUser(userDto));
-        log.info("Пользователь добавлен: {}", newUser);
-        return mapper.toUserResponseDto(newUser);
+        User user = mapper.toUser(userDto);
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        User savedUser = repository.save(user);
+        log.info("Пользователь добавлен: {}", savedUser);
+        return mapper.toUserResponseDto(savedUser);
     }
 
     @Override
-    public List<UserResponseDto> getUsersFiltered(Boolean status, UserRole role, UserPosition position) {
+    public Page<UserResponseDto> getUsersFiltered(Boolean status, UserRole role, UserPosition position, Pageable pageable) {
         log.info("Запрос на получение пользователей: status={}, role={}, position={}", status, role, position);
-        return repository.findFiltered(status, role, position).stream()
-                .map(mapper::toUserResponseDto)
-                .collect(Collectors.toList());
+        Page<User> usersPage = repository.findFiltered(status, role, position, pageable);
+        return usersPage.map(mapper::toUserResponseDto);
     }
-
 
     @Override
     public UserResponseDto getById(Long id) {
@@ -86,7 +90,7 @@ public class UserServiceImpl implements UserService {
         log.info("Попытка смены пароля у пользователя с ID: {}", id);
         User existingUser = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + id + " не найден"));
-        existingUser.setPassword(newPassword);
+        existingUser.setPassword(passwordEncoder.encode(newPassword));
         User updatedUser = repository.save(existingUser);
         log.info("Пароль пользователя обновлен: {}", updatedUser);
         return mapper.toUserResponseDto(updatedUser);

@@ -5,19 +5,27 @@ import io.github.deanmave.hplclims.domain.dto.request.ColumnCreateDto;
 import io.github.deanmave.hplclims.domain.dto.request.ColumnUpdateDto;
 import io.github.deanmave.hplclims.domain.dto.response.ColumnResponseDto;
 import io.github.deanmave.hplclims.service.interfaces.ColumnService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping(path = "/api/v1/columns")
+@SecurityRequirement(name = "BearerAuth")
 @RequiredArgsConstructor
 public class ColumnController {
     private final ColumnService service;
 
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ColumnResponseDto addNewColumn(@Valid @RequestBody ColumnCreateDto createDto) {
@@ -25,27 +33,34 @@ public class ColumnController {
     }
 
     @GetMapping
-    public List<ColumnResponseDto> getAll() {
-        return service.getAll();
+    public Page<ColumnResponseDto> getAll(@RequestParam(required = false) Boolean isExternal,
+                                          @RequestParam(required = false) String ownerOrganization,
+                                          @RequestParam(required = false) String internalCode,
+                                          @RequestParam(required = false) String storageLocation,
+                                          @RequestParam(required = false) ColumnStatus status,
+                                          @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return service.getColumnsFiltered(isExternal, ownerOrganization, internalCode, storageLocation, status, pageable);
     }
 
-    @GetMapping("/{columnId}")
     public ColumnResponseDto getById(@PathVariable Long columnId) {
         return service.getById(columnId);
     }
 
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @DeleteMapping("/{columnId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long columnId) {
         service.deleteById(columnId);
     }
 
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @PatchMapping("/{columnId}/status")
     public ColumnResponseDto changeStatus(@PathVariable Long columnId,
                                           @RequestParam ColumnStatus status) {
         return service.changeStatus(columnId, status);
     }
 
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @PatchMapping("/{columnId}")
     public ColumnResponseDto updateColumn(@PathVariable Long columnId,
                                           @Valid @RequestBody ColumnUpdateDto updateDto) {

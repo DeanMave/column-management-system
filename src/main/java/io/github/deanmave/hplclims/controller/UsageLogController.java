@@ -1,39 +1,51 @@
 package io.github.deanmave.hplclims.controller;
 
+import io.github.deanmave.hplclims.domain.User;
 import io.github.deanmave.hplclims.domain.dto.request.*;
 import io.github.deanmave.hplclims.domain.dto.response.UsageLogResponseDto;
 import io.github.deanmave.hplclims.service.interfaces.UsageLogService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping(path = "/api/v1/usage-logs")
+@SecurityRequirement(name = "BearerAuth")
 @RequiredArgsConstructor
 public class UsageLogController {
     private final UsageLogService service;
 
+    @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PostMapping("/start")
     @ResponseStatus(HttpStatus.CREATED)
-    public UsageLogResponseDto startUsage(@Valid @RequestBody StartUsageRequest request) {
-        return service.startUsage(request);
+    public UsageLogResponseDto startUsage(@AuthenticationPrincipal User currentUser,
+                                          @Valid @RequestBody StartUsageRequest request) {
+        return service.startUsage(currentUser.getId(), request);
     }
 
+    @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}/end")
-    public UsageLogResponseDto endUsage(@PathVariable Long logId,
+    public UsageLogResponseDto endUsage(@AuthenticationPrincipal User currentUser,
+                                        @PathVariable Long logId,
                                         @Valid @RequestBody EndUsageRequest request) {
-        return service.endUsage(logId, request);
+        return service.endUsage(logId, currentUser, request);
     }
 
+    @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}/reject")
-    public UsageLogResponseDto rejectUsage(@PathVariable Long logId,
+    public UsageLogResponseDto rejectUsage(@AuthenticationPrincipal User currentUser,
+                                           @PathVariable Long logId,
                                            @Valid @RequestBody RejectUsageRequest request) {
-        return service.rejectUsage(logId, request);
+        return service.rejectUsage(logId, currentUser, request);
     }
 
+    @PreAuthorize("hasAnyRole('LAB_HEAD', 'SENIOR_USER', 'USER')")
     @PatchMapping("/{logId}")
     public UsageLogResponseDto updateLog(@PathVariable Long logId,
                                          @Valid @RequestBody CorrectUsageLogRequest request) {
@@ -55,6 +67,7 @@ public class UsageLogController {
         return service.getActiveUsages();
     }
 
+    @PreAuthorize("hasAnyRole('LAB_HEAD','SENIOR_USER')")
     @DeleteMapping("/{logId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long logId) {
