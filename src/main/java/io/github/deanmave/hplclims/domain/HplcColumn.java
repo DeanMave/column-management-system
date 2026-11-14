@@ -2,6 +2,7 @@ package io.github.deanmave.hplclims.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @ToString
+@Audited
 public class HplcColumn {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
